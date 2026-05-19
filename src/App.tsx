@@ -37,10 +37,12 @@ import {
   User as UserIcon,
   ShoppingBag,
   Target,
-  AlertTriangle
+  AlertTriangle,
+  FileBarChart
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { format, startOfMonth, endOfMonth, parseISO, isSameMonth } from 'date-fns';
+import { arSA } from 'date-fns/locale';
 import { 
   BarChart, 
   Bar, 
@@ -67,21 +69,59 @@ import {
   ProductType 
 } from './types';
 
-// --- Components ---
+// --- Helpers ---
 
-const COLORS = ['#A16207', '#1E293B', '#64748b', '#94a3b8', '#cbd5e1'];
-const PRODUCT_COLORS = {
-  acrylic: '#A16207',
-  wood: '#1E293B',
-  svg: '#0f172a',
-  other: '#64748b'
+const safeFormat = (dateStr: string | undefined | null, formatStr: string) => {
+  if (!dateStr) return '---';
+  try {
+    const date = parseISO(dateStr);
+    if (isNaN(date.getTime())) return '---';
+    return format(date, formatStr, { locale: arSA });
+  } catch (e) {
+    return '---';
+  }
+};
+
+const translateCategory = (cat: string) => {
+  const map: Record<string, string> = {
+    materials: 'خامات أولية',
+    marketing: 'حملات تسويقية',
+    maintenance: 'صيانة وتشغيل',
+    wages: 'أجور وتكليفات',
+    other: 'مصاريف عامة'
+  };
+  return map[cat] || cat;
+};
+
+const translateProduct = (type: string) => {
+  const map: Record<string, string> = {
+    acrylic: 'منتجات أكريليك',
+    wood: 'منتجات خشبية',
+    svg: 'ملفات رقمية (SVG)',
+    other: 'منتج آخر'
+  };
+  return map[type] || type;
+};
+
+const generateCashFlowTrend = (revenues: any[], expenses: any[]) => {
+  // Get last 6 months
+  const trend = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date();
+    d.setMonth(d.getMonth() - i);
+    const monthStr = format(d, 'yyyy-MM');
+    const rev = revenues.filter(r => r.date && r.date.startsWith(monthStr)).reduce((a, c) => a + c.amount, 0);
+    const exp = expenses.filter(e => e.date && e.date.startsWith(monthStr)).reduce((a, c) => a + c.amount, 0);
+    trend.push({ month: format(d, 'MMM'), net: rev - exp });
+  }
+  return trend;
 };
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [services, setServices] = useState<{ db: any, auth: any }>({ db: initialDb, auth: initialAuth });
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'expenses' | 'revenues' | 'budget' | 'waste'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'expenses' | 'revenues' | 'budget' | 'waste' | 'reports'>('dashboard');
   
   const [budgets, setBudgets] = useState<BudgetTarget[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -111,7 +151,7 @@ export default function App() {
   useEffect(() => {
     if (!user || !services.db) return;
 
-    // Remove userId filter to allow all employees/users in the same Firebase project to see data
+    // Listen to plural collections (standard)
     const unsubBudgets = onSnapshot(collection(services.db, 'budgets'), (snap) => {
       setBudgets(snap.docs.map(d => ({ id: d.id, ...d.data() } as BudgetTarget)));
     }, (err) => console.error("Budgets listener error:", err));
@@ -135,6 +175,43 @@ export default function App() {
       unsubWaste();
     };
   }, [user, services.db]);
+
+  const handleSeedData = async () => {
+    if (!user || !services.db) return;
+    if (!window.confirm('هل تريد استعادة البيانات التجريبية؟ سيتم إضافة سجلات جديدة لمساعدتك في تجربة لوحة التحكم.')) return;
+
+    try {
+      const now = new Date();
+      const monthStr = format(now, 'yyyy-MM');
+      const isoDate = now.toISOString();
+
+      const sampleRevenues = [
+        { productType: 'acrylic', amount: 450, orderNumber: '1001', date: isoDate, description: 'لوحة مكتبية أكريليك' },
+        { productType: 'wood', amount: 1200, orderNumber: '1002', date: isoDate, description: 'صينية ضيافة خشب' },
+        { productType: 'svg', amount: 80, orderNumber: '1003', date: isoDate, description: 'تصميم شعار SVG' }
+      ];
+
+      const sampleExpenses = [
+        { category: 'materials', amount: 300, date: isoDate, description: 'شراء خشب زان' },
+        { category: 'marketing', amount: 150, date: isoDate, description: 'إعلان انستقرام' }
+      ];
+
+      const sampleBudgets = [
+        { category: 'materials', amount: 5000, month: monthStr },
+        { category: 'marketing', amount: 1000, month: monthStr },
+        { category: 'wages', amount: 3000, month: monthStr }
+      ];
+
+      for (const r of sampleRevenues) await addDoc(collection(services.db, 'revenues'), { ...r, userId: user.uid, createdAt: serverTimestamp() });
+      for (const e of sampleExpenses) await addDoc(collection(services.db, 'expenses'), { ...e, userId: user.uid, createdAt: serverTimestamp() });
+      for (const b of sampleBudgets) await addDoc(collection(services.db, 'budgets'), { ...b, userId: user.uid, createdAt: serverTimestamp() });
+
+      alert('تمت استعادة البيانات بنجاح');
+    } catch (err) {
+      console.error(err);
+      alert('فشل في إضافة البيانات');
+    }
+  };
 
   const handleLogin = () => services.auth && signInWithPopup(services.auth, new GoogleAuthProvider());
   const handleLogout = () => {
@@ -230,6 +307,7 @@ export default function App() {
             <NavItem icon={<ShoppingBag size={18} />} label="المبيعات" active={activeTab === 'revenues'} onClick={() => setActiveTab('revenues')} />
             <NavItem icon={<Target size={18} />} label="الميزانية" active={activeTab === 'budget'} onClick={() => setActiveTab('budget')} />
             <NavItem icon={<AlertTriangle size={18} />} label="الهدر" active={activeTab === 'waste'} onClick={() => setActiveTab('waste')} />
+            <NavItem icon={<FileBarChart size={18} />} label="التقارير" active={activeTab === 'reports'} onClick={() => setActiveTab('reports')} />
           </div>
 
           <div className="hidden md:block pt-4 border-t border-hayat-border/60">
@@ -260,7 +338,15 @@ export default function App() {
               exit={{ opacity: 0, x: -20 }}
               ref={dashboardRef}
             >
-               <DashboardHeader user={user} budgets={budgets} expenses={expenses} revenues={revenues} waste={waste} dashboardRef={dashboardRef} />
+               <DashboardHeader 
+                  user={user} 
+                  budgets={budgets} 
+                  expenses={expenses} 
+                  revenues={revenues} 
+                  waste={waste} 
+                  dashboardRef={dashboardRef} 
+                  onSeedData={handleSeedData}
+               />
                
                <DashboardContent budgets={budgets} expenses={expenses} revenues={revenues} waste={waste} />
             </motion.div>
@@ -269,6 +355,7 @@ export default function App() {
           {activeTab === 'revenues' && <DataListSection title="إدارة المبيعات" type="revenue" items={revenues} user={user} services={services} />}
           {activeTab === 'budget' && <DataListSection title="تخطيط الميزانية" type="budget" items={budgets} user={user} services={services} />}
           {activeTab === 'waste' && <DataListSection title="تتبع الهدر" type="waste" items={waste} user={user} services={services} />}
+          {activeTab === 'reports' && <ReportsView expenses={expenses} revenues={revenues} budgets={budgets} setActiveTab={setActiveTab} />}
         </AnimatePresence>
       </main>
     </div>
@@ -299,40 +386,51 @@ function NavItem({ icon, label, active, onClick }: { icon: any, label: string, a
   );
 }
 
-function DashboardHeader({ user, budgets, expenses, revenues, waste, dashboardRef }: any) {
+function DashboardHeader({ user, budgets, expenses, revenues, waste, dashboardRef, onSeedData }: any) {
   const [isExporting, setIsExporting] = useState(false);
   const currentMonth = format(new Date(), 'yyyy-MM');
-  const monthRevenues = revenues.filter((r: any) => format(parseISO(r.date), 'yyyy-MM') === currentMonth);
-  const monthExpenses = expenses.filter((e: any) => format(parseISO(e.date), 'yyyy-MM') === currentMonth);
-  const monthWaste = waste.filter((w: any) => format(parseISO(w.date), 'yyyy-MM') === currentMonth);
+  
+  const safeParseDate = (dateStr: string) => {
+    try {
+      return parseISO(dateStr);
+    } catch (e) {
+      return new Date();
+    }
+  };
+
+  const monthRevenues = revenues.filter((r: any) => r.date && format(safeParseDate(r.date), 'yyyy-MM') === currentMonth);
+  const monthExpenses = expenses.filter((e: any) => e.date && format(safeParseDate(e.date), 'yyyy-MM') === currentMonth);
+  const monthWaste = waste.filter((w: any) => w.date && format(safeParseDate(w.date), 'yyyy-MM') === currentMonth);
   
   const totalRevenue = monthRevenues.reduce((acc: number, curr: any) => acc + curr.amount, 0);
   const totalExpense = monthExpenses.reduce((acc: number, curr: any) => acc + curr.amount, 0);
   const netProfit = totalRevenue - totalExpense;
 
+  const noData = revenues.length === 0 && expenses.length === 0;
+
   const downloadReportCSV = () => {
     let csvContent = "\uFEFF"; // BOM for Arabic support
-    csvContent += "البيانات المالية لشهر " + format(new Date(), 'MMMM yyyy') + "\n\n";
+    csvContent += "البيانات المالية لشهر " + format(new Date(), 'MMMM yyyy', { locale: arSA }) + "\n\n";
 
     // Sales
     csvContent += "المبيعات\n";
     csvContent += "التاريخ,المنتج,القيمة,رقم الطلب\n";
     monthRevenues.forEach((r: any) => {
-      csvContent += `${format(parseISO(r.date), 'yyyy-MM-dd')},${translateProduct(r.productType)},${r.amount},${r.orderNumber || ''}\n`;
+      csvContent += `${safeFormat(r.date, 'yyyy-MM-dd')},${translateProduct(r.productType)},${r.amount},${r.orderNumber || ''}\n`;
     });
 
     // Expenses
     csvContent += "\nالمصاريف\n";
     csvContent += "التاريخ,الفئة,المبلغ,الوصف\n";
     monthExpenses.forEach((e: any) => {
-      csvContent += `${format(parseISO(e.date), 'yyyy-MM-dd')},${translateCategory(e.category)},${e.amount},${e.description || ''}\n`;
+      csvContent += `${safeFormat(e.date, 'yyyy-MM-dd')},${translateCategory(e.category)},${e.amount},${e.description || ''}\n`;
     });
 
     // Waste
     csvContent += "\nالهدر\n";
     csvContent += "التاريخ,المادة,التكلفة,السبب\n";
     monthWaste.forEach((w: any) => {
-      csvContent += `${format(parseISO(w.date), 'yyyy-MM-dd')},${w.material},${w.estimatedCost},${w.reason || ''}\n`;
+      csvContent += `${safeFormat(w.date, 'yyyy-MM-dd')},${w.material},${w.estimatedCost},${w.reason || ''}\n`;
     });
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -351,7 +449,6 @@ function DashboardHeader({ user, budgets, expenses, revenues, waste, dashboardRe
     setIsExporting(true);
     try {
       await new Promise(resolve => setTimeout(resolve, 800));
-      
       const element = dashboardRef.current;
       const canvas = await html2canvas(element, {
         scale: 2,
@@ -359,20 +456,41 @@ function DashboardHeader({ user, budgets, expenses, revenues, waste, dashboardRe
         backgroundColor: '#F9F7F5',
         logging: false,
         onclone: (clonedDoc) => {
+          // 1. Robust oklch/oklab stripping from ALL stylesheets
+          clonedDoc.querySelectorAll('style').forEach(styleTag => {
+            if (styleTag.innerHTML.includes('oklch') || styleTag.innerHTML.includes('oklab')) {
+              styleTag.innerHTML = styleTag.innerHTML.replace(/(oklch|oklab)\([^)]+\)/g, '#000000');
+            }
+          });
+
+          // 2. Comprehensive element-level override
+          clonedDoc.querySelectorAll('*').forEach((el: any) => {
+            if (el.style) {
+              // Strip from inline style text
+              if (el.style.cssText && (el.style.cssText.includes('oklch') || el.style.cssText.includes('oklab'))) {
+                el.style.cssText = el.style.cssText.replace(/(oklch|oklab)\([^)]+\)/g, '#000000');
+              }
+              
+              // Override computed styles that html2canvas might still "see"
+              const computed = window.getComputedStyle(el);
+              if (computed.color.includes('oklch') || computed.color.includes('oklab')) el.style.color = '#0F172A';
+              if (computed.backgroundColor.includes('oklch') || computed.backgroundColor.includes('oklab')) {
+                el.style.backgroundColor = el.classList.contains('card-hayat') ? '#FFFFFF' : 'transparent';
+              }
+              if (computed.borderColor.includes('oklch') || computed.borderColor.includes('oklab')) el.style.borderColor = '#E2E8F0';
+              if (computed.fill?.includes('oklch') || computed.fill?.includes('oklab')) el.style.fill = '#888888';
+              if (computed.stroke?.includes('oklch') || computed.stroke?.includes('oklab')) el.style.stroke = '#888888';
+            }
+          });
+
           const clonedElement = clonedDoc.getElementById('dash');
           if (clonedElement) {
              clonedElement.style.padding = '60px';
              clonedElement.style.width = '1200px';
              clonedElement.style.background = '#F9F7F5';
-             const allElements = clonedElement.querySelectorAll('*');
-             allElements.forEach((el: any) => {
-                if (el.tagName === 'svg' || el.tagName === 'path' || el.tagName === 'circle') return;
-                const computedStyle = window.getComputedStyle(el);
-                if (computedStyle.color.includes('oklch')) { el.style.color = '#0F172A'; }
-                if (computedStyle.backgroundColor.includes('oklch')) { el.style.backgroundColor = 'transparent'; }
-             });
           }
         }
+
       });
       const image = canvas.toDataURL("image/png");
       const link = document.createElement("a");
@@ -400,17 +518,35 @@ function DashboardHeader({ user, budgets, expenses, revenues, waste, dashboardRe
         backgroundColor: '#F9F7F5',
         logging: false,
         onclone: (clonedDoc) => {
+          // 1. Robust oklch/oklab stripping from ALL stylesheets
+          clonedDoc.querySelectorAll('style').forEach(styleTag => {
+            if (styleTag.innerHTML.includes('oklch') || styleTag.innerHTML.includes('oklab')) {
+              styleTag.innerHTML = styleTag.innerHTML.replace(/(oklch|oklab)\([^)]+\)/g, '#000000');
+            }
+          });
+
+          // 2. Comprehensive element-level override
+          clonedDoc.querySelectorAll('*').forEach((el: any) => {
+            if (el.style) {
+              if (el.style.cssText && (el.style.cssText.includes('oklch') || el.style.cssText.includes('oklab'))) {
+                el.style.cssText = el.style.cssText.replace(/(oklch|oklab)\([^)]+\)/g, '#000000');
+              }
+              const computed = window.getComputedStyle(el);
+              if (computed.color.includes('oklch') || computed.color.includes('oklab')) el.style.color = '#0F172A';
+              if (computed.backgroundColor.includes('oklch') || computed.backgroundColor.includes('oklab')) {
+                el.style.backgroundColor = el.classList.contains('card-hayat') ? '#FFFFFF' : 'transparent';
+              }
+              if (computed.borderColor.includes('oklch') || computed.borderColor.includes('oklab')) el.style.borderColor = '#E2E8F0';
+              if (computed.fill?.includes('oklch') || computed.fill?.includes('oklab')) el.style.fill = '#888888';
+              if (computed.stroke?.includes('oklch') || computed.stroke?.includes('oklab')) el.style.stroke = '#888888';
+            }
+          });
+
           const clonedElement = clonedDoc.getElementById('dash');
           if (clonedElement) {
              clonedElement.style.padding = '60px';
              clonedElement.style.width = '1200px';
              clonedElement.style.background = '#F9F7F5';
-             const allElements = clonedElement.querySelectorAll('*');
-             allElements.forEach((el: any) => {
-                if (el.tagName === 'svg' || el.tagName === 'path') return;
-                const computedStyle = window.getComputedStyle(el);
-                if (computedStyle.color.includes('oklch')) { el.style.color = '#0F172A'; }
-             });
           }
         }
       });
@@ -451,6 +587,14 @@ function DashboardHeader({ user, budgets, expenses, revenues, waste, dashboardRe
         </motion.div>
         
         <div className="flex flex-wrap gap-3" data-html2canvas-ignore="true">
+          {noData && (
+             <button 
+               onClick={onSeedData}
+               className="px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-hayat-wood text-white shadow-hayat hover:bg-yellow-700 transition-all ml-4"
+             >
+               استعادة بيانات تجريبية
+             </button>
+          )}
           <div className="flex bg-white/50 backdrop-blur-sm border border-hayat-border p-1.5 rounded-2xl shadow-hayat">
             <ExportButton label="PDF" onClick={exportAsPDF} disabled={isExporting} />
             <ExportButton label="صورة" onClick={exportAsImage} disabled={isExporting} />
@@ -526,19 +670,17 @@ function DashboardContent({ budgets, expenses, revenues, waste }: any) {
   const categories: Category[] = ['materials', 'marketing', 'maintenance', 'wages', 'other'];
   const budgetVsActual = categories.map(cat => {
     const target = budgets.find((b: any) => b.category === cat && b.month === currentMonth)?.amount || 0;
-    const actual = expenses.filter((e: any) => e.category === cat && format(parseISO(e.date), 'yyyy-MM') === currentMonth)
+    const actual = expenses.filter((e: any) => e.category === cat && e.date && e.date.startsWith(currentMonth))
                            .reduce((acc: number, curr: any) => acc + curr.amount, 0);
     return { name: translateCategory(cat), target, actual };
   });
 
   const recentRevenues = [...revenues]
-    .filter(r => format(parseISO(r.date), 'yyyy-MM') === currentMonth)
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime())
     .slice(0, 5);
 
   const recentExpenses = [...expenses]
-    .filter(e => format(parseISO(e.date), 'yyyy-MM') === currentMonth)
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime())
     .slice(0, 5);
 
   const navyColor = "#0F172A";
@@ -668,7 +810,7 @@ function DashboardContent({ budgets, expenses, revenues, waste }: any) {
                   </div>
                   <div>
                     <p className="text-sm font-bold" style={{ color: '#334155' }}>{translateProduct(r.productType)}</p>
-                    <p className="text-[10px] font-bold" style={{ color: '#94A3B8' }}>{format(parseISO(r.date), 'dd MMMM')}</p>
+                    <p className="text-[10px] font-bold" style={{ color: '#94A3B8' }}>{safeFormat(r.date, 'dd MMMM')}</p>
                   </div>
                 </div>
                 <div className="text-left font-serif">
@@ -699,7 +841,7 @@ function DashboardContent({ budgets, expenses, revenues, waste }: any) {
                   </div>
                   <div>
                     <p className="text-sm font-bold" style={{ color: '#334155' }}>{translateCategory(e.category)}</p>
-                    <p className="text-[10px] font-bold" style={{ color: '#94A3B8' }}>{format(parseISO(e.date), 'dd MMMM')}</p>
+                    <p className="text-[10px] font-bold" style={{ color: '#94A3B8' }}>{safeFormat(e.date, 'dd MMMM')}</p>
                   </div>
                 </div>
                 <div className="text-left font-serif">
@@ -718,6 +860,318 @@ function DashboardContent({ budgets, expenses, revenues, waste }: any) {
 }
 
 // --- List Sections ---
+
+// --- Reports Section ---
+
+function ReportsView({ expenses, revenues, budgets, setActiveTab }: { expenses: Expense[], revenues: Revenue[], budgets: BudgetTarget[], setActiveTab: (tab: any) => void }) {
+  const [viewMode, setViewMode] = useState<'chart' | 'table'>('chart');
+  const [chartType, setChartType] = useState<'bar' | 'line'>('bar');
+  const reportsRef = useRef<HTMLDivElement>(null);
+  
+  // Aggregate data by month
+  const monthlyData = React.useMemo(() => {
+    const data: Record<string, { month: string, revenue: number, expense: number, budget: number }> = {};
+    
+    // Process all dates to find all months present
+    const allDates = [
+      ...revenues.map(r => r.date),
+      ...expenses.map(e => e.date),
+      ...budgets.map(b => `${b.month}-01`)
+    ].filter(Boolean);
+    
+    const months = Array.from(new Set(allDates.map(d => {
+      try {
+        return format(parseISO(d!), 'yyyy-MM');
+      } catch (e) {
+        return '';
+      }
+    }).filter(Boolean))).sort();
+    
+    months.forEach(m => {
+      data[m] = { month: m, revenue: 0, expense: 0, budget: 0 };
+    });
+    
+    revenues.forEach(r => {
+      if (!r.date) return;
+      const m = format(parseISO(r.date), 'yyyy-MM');
+      if (data[m]) data[m].revenue += r.amount;
+    });
+    
+    expenses.forEach(e => {
+      if (!e.date) return;
+      const m = format(parseISO(e.date), 'yyyy-MM');
+      if (data[m]) data[m].expense += e.amount;
+    });
+    
+    budgets.forEach(b => {
+      const m = b.month;
+      if (data[m]) data[m].budget += b.amount;
+    });
+    
+    return Object.values(data).map(d => ({
+      ...d,
+      formattedMonth: format(parseISO(`${d.month}-01`), 'MMM yyyy', { locale: arSA }),
+      profit: d.revenue - d.expense,
+      margin: d.revenue > 0 ? (d.revenue - d.expense) / d.revenue * 100 : 0
+    }));
+  }, [revenues, expenses, budgets]);
+
+  const exportReport = async (formatType: 'pdf' | 'png') => {
+    if (!reportsRef.current) return;
+    const element = reportsRef.current;
+    
+    try {
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#F9F7F5',
+        onclone: (clonedDoc) => {
+           // 1. Robust oklch/oklab stripping from ALL stylesheets
+           clonedDoc.querySelectorAll('style').forEach(styleTag => {
+             if (styleTag.innerHTML.includes('oklch') || styleTag.innerHTML.includes('oklab')) {
+               styleTag.innerHTML = styleTag.innerHTML.replace(/(oklch|oklab)\([^)]+\)/g, '#000000');
+             }
+           });
+
+           // 2. Comprehensive element-level override
+           clonedDoc.querySelectorAll('*').forEach((el: any) => {
+             if (el.style) {
+               if (el.style.cssText && (el.style.cssText.includes('oklch') || el.style.cssText.includes('oklab'))) {
+                 el.style.cssText = el.style.cssText.replace(/(oklch|oklab)\([^)]+\)/g, '#000000');
+               }
+               const computed = window.getComputedStyle(el);
+               if (computed.color.includes('oklch') || computed.color.includes('oklab')) el.style.color = '#0F172A';
+               if (computed.backgroundColor.includes('oklch') || computed.backgroundColor.includes('oklab')) {
+                 el.style.backgroundColor = el.classList.contains('card-hayat') ? '#FFFFFF' : 'transparent';
+               }
+               if (computed.borderColor.includes('oklch') || computed.borderColor.includes('oklab')) el.style.borderColor = '#E2E8F0';
+               if (computed.fill?.includes('oklch') || computed.fill?.includes('oklab')) el.style.fill = '#888888';
+               if (computed.stroke?.includes('oklch') || computed.stroke?.includes('oklab')) el.style.stroke = '#888888';
+             }
+           });
+
+           const el = clonedDoc.getElementById('reports-content');
+           if (el) {
+              el.style.padding = '40px';
+              el.style.width = '1200px';
+           }
+        }
+      });
+      
+      if (formatType === 'png') {
+        const link = document.createElement('a');
+        link.download = `Hayat_Design_Report_${format(new Date(), 'yyyy-MM-dd')}.png`;
+        link.href = canvas.toDataURL();
+        link.click();
+      } else {
+        const pdf = new jsPDF('l', 'mm', 'a4');
+        const imgData = canvas.toDataURL('image/png');
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        pdf.save(`Hayat_Design_Report_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  return (
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="space-y-8"
+    >
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-4">
+        <div>
+          <h2 className="text-3xl font-serif text-hayat-navy mb-2">التقارير التحليلية</h2>
+          <p className="text-slate-400 text-sm font-bold">تحليل الربحية والأداء المالي على مدار الأشهر</p>
+        </div>
+        
+        <div className="flex bg-white p-1 rounded-2xl shadow-hayat border border-hayat-border/40">
+           <button 
+            onClick={() => setViewMode('chart')}
+            className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'chart' ? 'bg-hayat-navy text-white shadow-md' : 'text-slate-400 hover:bg-slate-50'}`}
+           >
+             المخططات البيانية
+           </button>
+           <button 
+            onClick={() => setViewMode('table')}
+            className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'table' ? 'bg-hayat-navy text-white shadow-md' : 'text-slate-400 hover:bg-slate-50'}`}
+           >
+             الجداول التفصيلية
+           </button>
+        </div>
+      </div>
+
+      <div id="reports-content" ref={reportsRef} className="card-hayat bg-white space-y-12 min-h-[400px] flex flex-col items-center justify-center">
+        {monthlyData.length === 0 ? (
+          <div className="text-center py-20">
+            <div className="w-16 h-16 bg-hayat-accent/30 rounded-full flex items-center justify-center mx-auto mb-6">
+              <FileBarChart size={32} className="text-hayat-navy/40" />
+            </div>
+            <h3 className="text-xl font-bold text-hayat-navy mb-2">لا توجد بيانات كافية للتقارير</h3>
+            <p className="text-slate-400 text-sm max-w-xs mx-auto">أضف بعض المبيعات والمصاريف ليتمكن النظام من تحليل بياناتك وعرض التقارير الشهرية.</p>
+            <button 
+              onClick={() => setActiveTab('revenues')}
+              className="mt-8 px-6 py-3 bg-hayat-navy text-white rounded-xl font-bold text-xs shadow-hayat hover:scale-105 transition-transform"
+            >
+              إضافة مبيعات الآن
+            </button>
+          </div>
+        ) : viewMode === 'chart' ? (
+          <div className="w-full space-y-10">
+            <div className="flex justify-between items-center bg-hayat-accent/20 p-4 rounded-2xl">
+               <h4 className="text-sm font-bold text-hayat-navy">تحليل المبيعات والمصاريف الشهرية</h4>
+               <div className="flex gap-2">
+                  <button 
+                    onClick={() => setChartType('bar')}
+                    className={`p-2 rounded-lg transition-all ${chartType === 'bar' ? 'bg-hayat-wood text-white shadow-sm' : 'bg-white text-slate-300'}`}
+                  >
+                    <LayoutDashboard size={16} />
+                  </button>
+                  <button 
+                    onClick={() => setChartType('line')}
+                    className={`p-2 rounded-lg transition-all ${chartType === 'line' ? 'bg-hayat-wood text-white shadow-sm' : 'bg-white text-slate-300'}`}
+                  >
+                    <TrendingUp size={16} />
+                  </button>
+               </div>
+            </div>
+            
+            <div className="h-[400px]">
+              <ResponsiveContainer width="100%" height="100%">
+                {chartType === 'bar' ? (
+                  <BarChart data={monthlyData} barGap={8}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <XAxis dataKey="formattedMonth" fontSize={10} fontWeight={700} tick={{ fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                    <YAxis fontSize={10} fontWeight={700} tick={{ fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                    <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.05)' }} />
+                    <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px', fontWeight: 'bold', fontSize: '10px' }} />
+                    <Bar name="إجمالي المبيعات" dataKey="revenue" fill="#10B981" radius={[4, 4, 0, 0]} barSize={30} />
+                    <Bar name="إجمالي المصاريف" dataKey="expense" fill="#F43F5E" radius={[4, 4, 0, 0]} barSize={30} />
+                  </BarChart>
+                ) : (
+                  <AreaChart data={monthlyData}>
+                    <defs>
+                      <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10B981" stopOpacity={0.1}/>
+                        <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
+                      </linearGradient>
+                      <linearGradient id="expenseGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#F43F5E" stopOpacity={0.1}/>
+                        <stop offset="95%" stopColor="#F43F5E" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <XAxis dataKey="formattedMonth" fontSize={10} fontWeight={700} tick={{ fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                    <YAxis fontSize={10} fontWeight={700} tick={{ fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                    <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.05)' }} />
+                    <Legend wrapperStyle={{ paddingTop: '20px', fontWeight: 'bold', fontSize: '10px' }} />
+                    <Area type="monotone" name="المبيعات" dataKey="revenue" stroke="#10B981" strokeWidth={3} fill="url(#revenueGrad)" />
+                    <Area type="monotone" name="المصاريف" dataKey="expense" stroke="#F43F5E" strokeWidth={3} fill="url(#expenseGrad)" />
+                  </AreaChart>
+                )}
+              </ResponsiveContainer>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-6 border-t border-hayat-border/40">
+               <div>
+                  <h5 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-6">تحليل هامش الربح الشهري</h5>
+                  <div className="h-[200px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                       <LineChart data={monthlyData}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                          <XAxis dataKey="formattedMonth" hide />
+                          <YAxis fontSize={10} fontWeight={700} tick={{ fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                          <Tooltip contentStyle={{ borderRadius: '12px', fontSize: '10px' }} />
+                          <Line type="monotone" name="هامش الربح %" dataKey="margin" stroke="#A16207" strokeWidth={3} dot={{ r: 4, fill: '#A16207' }} />
+                       </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+               </div>
+               <div className="flex flex-col justify-center bg-hayat-accent/10 p-8 rounded-[2rem] border border-hayat-border/20">
+                  <h5 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">ملخص الأداء التراكمي</h5>
+                  <div className="space-y-4">
+                     <div className="flex justify-between items-center">
+                        <span className="text-xs font-bold text-slate-500">متوسط الربح الشهري</span>
+                        <span className="text-lg font-serif font-black text-hayat-navy">
+                           {monthlyData.length > 0 ? (monthlyData.reduce((acc, curr) => acc + curr.profit, 0) / monthlyData.length).toLocaleString() : 0} <span className="text-[9px] font-sans">ريال</span>
+                        </span>
+                     </div>
+                     <div className="flex justify-between items-center">
+                        <span className="text-xs font-bold text-slate-500">أعلى شهر مبيعات</span>
+                        <span className="text-lg font-serif font-black text-emerald-600">
+                           {monthlyData.length > 0 ? Math.max(...monthlyData.map(d => d.revenue)).toLocaleString() : 0} <span className="text-[9px] font-sans">ريال</span>
+                        </span>
+                     </div>
+                     <div className="flex justify-between items-center">
+                        <span className="text-xs font-bold text-slate-500">متوسط المصاريف</span>
+                        <span className="text-lg font-serif font-black text-rose-600">
+                           {monthlyData.length > 0 ? (monthlyData.reduce((acc, curr) => acc + curr.expense, 0) / monthlyData.length).toLocaleString() : 0} <span className="text-[9px] font-sans">ريال</span>
+                        </span>
+                     </div>
+                  </div>
+               </div>
+            </div>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-right border-collapse">
+              <thead>
+                <tr className="bg-hayat-accent border-b border-hayat-border/40 text-slate-400 text-[9px] uppercase tracking-[0.2em] font-black">
+                  <th className="py-6 px-10">الشهر</th>
+                  <th className="py-6 px-10">المبيعات</th>
+                  <th className="py-6 px-10">المصاريف</th>
+                  <th className="py-6 px-10">الربح الصافي</th>
+                  <th className="py-6 px-10 text-left">هامش الربح</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-hayat-border/30">
+                {monthlyData.slice().reverse().map((data) => (
+                  <tr key={data.month} className="hover:bg-hayat-accent/40 transition-colors">
+                    <td className="py-6 px-10">
+                       <span className="text-xs font-black text-hayat-navy uppercase tracking-widest">{format(parseISO(`${data.month}-01`), 'MMMM yyyy', { locale: arSA })}</span>
+                    </td>
+                    <td className="py-6 px-10 font-bold text-emerald-600 tabular-nums">
+                       {data.revenue.toLocaleString()} <span className="text-[9px] font-sans opacity-40">ريال</span>
+                    </td>
+                    <td className="py-6 px-10 font-bold text-rose-600 tabular-nums">
+                       {data.expense.toLocaleString()} <span className="text-[9px] font-sans opacity-40">ريال</span>
+                    </td>
+                    <td className="py-6 px-10 font-serif font-black text-hayat-navy text-lg tabular-nums">
+                       {data.profit.toLocaleString()} <span className="text-[10px] font-sans opacity-40">ريال</span>
+                    </td>
+                    <td className="py-6 px-10 text-left">
+                       <span className={`inline-block px-3 py-1 rounded-full text-[10px] font-black ${data.margin >= 30 ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
+                          {Math.round(data.margin)}%
+                       </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      <div className="flex justify-end gap-3" data-html2canvas-ignore="true">
+        <button 
+          onClick={() => exportReport('pdf')}
+          className="btn-secondary flex items-center gap-2"
+        >
+          تصدير كـ PDF
+        </button>
+        <button 
+          onClick={() => exportReport('png')}
+          className="btn-primary flex items-center gap-2"
+        >
+          تنزيل كصورة
+        </button>
+      </div>
+    </motion.div>
+  );
+}
 
 function DataListSection({ title, type, items, user, services }: { title: string, type: 'budget'|'expense'|'revenue'|'waste', items: any[], user: User, services: any }) {
   const [showAdd, setShowAdd] = useState(false);
@@ -790,7 +1244,7 @@ function DataListSection({ title, type, items, user, services }: { title: string
                    <div className="flex items-center gap-2">
                       <div className="w-1.5 h-1.5 rounded-full bg-slate-200"></div>
                       <span className="text-[11px] text-slate-400 font-bold tabular-nums">
-                        {type === 'budget' ? item.month : format(parseISO(item.date), 'yyyy / MM / dd')}
+                        {type === 'budget' ? item.month : safeFormat(item.date, 'yyyy / MM / dd')}
                       </span>
                    </div>
                 </td>
@@ -1011,30 +1465,4 @@ function FormGroup({ label, child }: any) {
   );
 }
 
-// --- Utils ---
 
-function translateCategory(cat: string) {
-  const map: any = { materials: 'خامات', marketing: 'تسويق', maintenance: 'صيانة', wages: 'أجور', other: 'أخرى' };
-  return map[cat] || cat;
-}
-
-function translateProduct(p: string) {
-  const map: any = { acrylic: 'أكريليك', wood: 'خشب', svg: 'SVG (رقمي)', other: 'أخرى' };
-  return map[p] || p;
-}
-
-function generateCashFlowTrend(revenues: Revenue[], expenses: Expense[]) {
-  // Aggregate by month for last 6 months
-  const months = [];
-  for (let i = 5; i >= 0; i--) {
-     const date = new Date();
-     date.setMonth(date.getMonth() - i);
-     months.push(format(date, 'yyyy-MM'));
-  }
-
-  return months.map(m => {
-    const rev = revenues.filter(r => format(parseISO(r.date), 'yyyy-MM') === m).reduce((a, b) => a + b.amount, 0);
-    const exp = expenses.filter(e => format(parseISO(e.date), 'yyyy-MM') === m).reduce((a, b) => a + b.amount, 0);
-    return { month: format(parseISO(m + '-01'), 'MMM'), net: rev - exp };
-  });
-}
