@@ -151,10 +151,15 @@ export default function App() {
           animate={{ opacity: 1, y: 0 }}
           className="max-w-md w-full bg-white p-12 rounded-3xl shadow-xl border border-hayat-wood/10"
         >
-          <h1 className="font-serif text-5xl mb-4 text-hayat-navy flex items-center justify-center gap-3">
-             <span className="w-12 h-12 bg-hayat-wood rounded-lg flex items-center justify-center text-white text-2xl font-bold">H</span>
-             حياة ديزاين
-          </h1>
+          <div className="flex flex-col items-center mb-6">
+            <img 
+              src="/logo.png" 
+              alt="Hayat Design Logo" 
+              className="w-32 h-32 mb-4 object-contain"
+              referrerPolicy="no-referrer"
+            />
+            <h1 className="font-serif text-4xl text-hayat-navy">حياة ديزاين</h1>
+          </div>
           <p className="text-slate-500 mb-8 leading-relaxed">اللوحة المالية الذكية لإدارة الميزانية وتتبع المبيعات</p>
           <button 
             onClick={handleLogin}
@@ -174,10 +179,17 @@ export default function App() {
       <nav className="fixed bottom-0 w-full bg-white border-t border-hayat-border md:w-64 md:h-screen md:sticky md:top-0 md:bg-white md:border-r z-50">
         <div className="flex md:flex-col h-full p-4 justify-around md:justify-start gap-2">
           <div className="hidden md:block mb-8 p-4 border-b border-hayat-border pb-6">
-             <h1 className="font-serif text-3xl text-hayat-navy flex items-center gap-2">
-               <span className="w-8 h-8 bg-hayat-wood rounded-lg flex items-center justify-center text-white text-lg">H</span>
-               حياة ديزاين
-             </h1>
+             <div className="flex items-center gap-3">
+               <img 
+                src="/logo.png" 
+                alt="Logo" 
+                className="w-10 h-10 object-contain"
+                referrerPolicy="no-referrer"
+               />
+               <h1 className="font-serif text-2xl text-hayat-navy">
+                 حياة ديزاين
+               </h1>
+             </div>
              <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-2 font-bold">Dashboard | لوحة التحكم</p>
           </div>
           
