@@ -5,17 +5,31 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Cormorant Garamond", serif;
   
-  --color-hayat-cream: #FDFBF7;
+  --color-hayat-cream: #F9F7F5;
   --color-hayat-wood: #A16207;
-  --color-hayat-navy: #1E293B;
-  --color-hayat-border: #e2e8f0;
+  --color-hayat-navy: #0F172A;
+  --color-hayat-border: #E2E8F0;
+  --color-hayat-accent: #FDFBF7;
+
+  --shadow-hayat: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  --shadow-hayat-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
 }
 
 @layer components {
   .form-input {
-    @apply bg-white border border-hayat-border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-hayat-wood/20 transition-all text-sm w-full shadow-sm;
+    @apply bg-[#FDFBF7] border border-hayat-border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-hayat-wood/10 focus:border-hayat-wood/40 transition-all text-sm w-full shadow-sm placeholder:text-slate-300;
   }
-  .card-minimal {
-    @apply bg-white rounded-xl border border-hayat-border shadow-sm p-6;
+  .card-hayat {
+    @apply bg-white rounded-3xl border border-hayat-border shadow-hayat p-8;
   }
+  .btn-primary {
+    @apply bg-hayat-navy text-white rounded-xl px-6 py-3 font-bold text-xs uppercase tracking-widest hover:bg-slate-800 transition-all shadow-md active:scale-95;
+  }
+  .btn-secondary {
+    @apply bg-white border border-hayat-border text-hayat-navy rounded-xl px-6 py-3 font-bold text-xs uppercase tracking-widest hover:bg-hayat-accent transition-all shadow-sm active:scale-95;
+  }
+}
+
+.rtl {
+  direction: rtl;
 }

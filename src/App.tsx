@@ -157,24 +157,55 @@ export default function App() {
 
   if (!user) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen bg-hayat-cream font-sans p-6 text-center">
+      <div className="flex flex-col items-center justify-center min-h-screen bg-hayat-cream font-sans p-6 overflow-hidden relative">
+        {/* Background Accents */}
+        <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+           <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-hayat-wood/5 rounded-full blur-3xl"></div>
+           <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-hayat-navy/5 rounded-full blur-3xl"></div>
+        </div>
+
         <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="max-w-md w-full bg-white p-12 rounded-3xl shadow-xl border border-hayat-wood/10"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="max-w-md w-full bg-white p-12 md:p-16 rounded-[3rem] shadow-hayat-lg border border-hayat-border/40 relative z-10"
         >
-          <div className="flex flex-col items-center mb-6">
-            <Logo className="w-24 h-24 mb-4" />
-            <h1 className="font-serif text-4xl text-hayat-navy">حياة ديزاين</h1>
+          <div className="flex flex-col items-center mb-10">
+            <motion.div
+              initial={{ rotate: -10, opacity: 0 }}
+              animate={{ rotate: 0, opacity: 1 }}
+              transition={{ delay: 0.3 }}
+            >
+              <Logo className="w-24 h-24 mb-6 drop-shadow-sm" />
+            </motion.div>
+            <h1 className="font-serif text-5xl text-hayat-navy mb-3 tracking-tight">حياة ديزاين</h1>
+            <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">Operational Dashboard</p>
           </div>
-          <p className="text-slate-500 mb-8 leading-relaxed">اللوحة المالية الذكية لإدارة الميزانية وتتبع المبيعات</p>
-          <button 
-            onClick={handleLogin}
-            className="w-full bg-hayat-navy text-white py-4 rounded-lg flex items-center justify-center gap-3 hover:bg-slate-800 transition-colors font-medium shadow-md"
-          >
-            <UserIcon size={20} />
-            تسجيل الدخول باستخدام جوجل
-          </button>
+          
+          <div className="space-y-6">
+            <p className="text-slate-500 text-sm leading-relaxed text-center px-4">
+              نظام الإدارة المالية الذكي لتتبع التدفقات النقدية، الميزانية، وتحليل كفاءة الإنتاج.
+            </p>
+            
+            <button 
+              onClick={handleLogin}
+              className="w-full bg-hayat-navy text-white py-5 rounded-[1.25rem] flex items-center justify-center gap-4 hover:bg-slate-800 transition-all font-bold text-xs uppercase tracking-widest shadow-hayat active:scale-[0.98]"
+            >
+              <div className="bg-white/10 p-1.5 rounded-lg">
+                <UserIcon size={18} />
+              </div>
+              الدخول لـ لوحة التحكم
+            </button>
+            
+            <div className="pt-8 border-t border-hayat-border/40 flex flex-col items-center">
+               <p className="text-[9px] text-slate-300 font-bold uppercase tracking-widest mb-4">Enterprise Edition 2024</p>
+               <div className="flex gap-4">
+                  <div className="w-1.5 h-1.5 rounded-full bg-hayat-wood/40"></div>
+                  <div className="w-1.5 h-1.5 rounded-full bg-hayat-navy/40"></div>
+                  <div className="w-1.5 h-1.5 rounded-full bg-hayat-wood/40"></div>
+               </div>
+            </div>
+          </div>
         </motion.div>
       </div>
     );
@@ -183,27 +214,36 @@ export default function App() {
   return (
     <div className="min-h-screen bg-hayat-cream font-sans text-stone-800 rtl" dir="rtl">
       {/* Sidebar / Nav */}
-      <nav className="fixed bottom-0 w-full bg-white border-t border-hayat-border md:w-64 md:h-screen md:sticky md:top-0 md:bg-white md:border-r z-50">
-        <div className="flex md:flex-col h-full p-4 justify-around md:justify-start gap-2">
-          <div className="hidden md:block mb-8 p-4 border-b border-hayat-border pb-6">
-             <Logo className="w-full" />
-             <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-2 font-bold">Dashboard | لوحة التحكم</p>
+      <nav className="fixed bottom-0 w-full bg-white/80 backdrop-blur-md border-t border-hayat-border md:w-72 md:h-screen md:sticky md:top-0 md:bg-white md:border-r md:border-t-0 z-50">
+        <div className="flex md:flex-col h-full p-4 justify-around md:justify-start gap-1">
+          <div className="hidden md:block mb-10 p-6 border-b border-hayat-border/60">
+             <div className="flex items-center gap-3 mb-2">
+                <Logo className="w-10 h-10" />
+                <h1 className="font-serif text-2xl text-hayat-navy tracking-tight">حياة ديزاين</h1>
+             </div>
+             <p className="text-[9px] text-slate-400 uppercase tracking-[0.2em] font-bold">Financial Intelligence</p>
           </div>
           
-          <NavItem icon={<LayoutDashboard size={20} />} label="الرئيسية" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
-          <NavItem icon={<Receipt size={20} />} label="المصاريف" active={activeTab === 'expenses'} onClick={() => setActiveTab('expenses')} />
-          <NavItem icon={<ShoppingBag size={20} />} label="المبيعات" active={activeTab === 'revenues'} onClick={() => setActiveTab('revenues')} />
-          <NavItem icon={<Target size={20} />} label="الميزانية" active={activeTab === 'budget'} onClick={() => setActiveTab('budget')} />
-          <NavItem icon={<AlertTriangle size={20} />} label="الهدر" active={activeTab === 'waste'} onClick={() => setActiveTab('waste')} />
+          <div className="flex md:flex-col gap-1 w-full flex-1">
+            <NavItem icon={<LayoutDashboard size={18} />} label="الرئيسية" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
+            <NavItem icon={<Receipt size={18} />} label="المصاريف" active={activeTab === 'expenses'} onClick={() => setActiveTab('expenses')} />
+            <NavItem icon={<ShoppingBag size={18} />} label="المبيعات" active={activeTab === 'revenues'} onClick={() => setActiveTab('revenues')} />
+            <NavItem icon={<Target size={18} />} label="الميزانية" active={activeTab === 'budget'} onClick={() => setActiveTab('budget')} />
+            <NavItem icon={<AlertTriangle size={18} />} label="الهدر" active={activeTab === 'waste'} onClick={() => setActiveTab('waste')} />
+          </div>
 
-          <div className="mt-4 border-t border-hayat-border"></div>
-          <NavItem icon={<LogOut size={20} />} label="خروج" active={false} onClick={handleLogout} />
+          <div className="hidden md:block pt-4 border-t border-hayat-border/60">
+             <NavItem icon={<LogOut size={18} />} label="إنهاء الجلسة" active={false} onClick={handleLogout} />
+          </div>
 
-          <div className="md:mt-auto flex items-center gap-3 p-4 border-t border-hayat-border md:mb-4">
-            <img src={user.photoURL || ''} className="w-8 h-8 rounded-full border border-hayat-border" alt="Avatar" />
+          <div className="md:mt-6 flex items-center gap-3 p-4 bg-hayat-accent rounded-2xl border border-hayat-border/40 mb-4 mx-2">
+            <div className="relative">
+              <img src={user.photoURL || ''} className="w-10 h-10 rounded-xl border-2 border-white shadow-sm object-cover" alt="Avatar" />
+              <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full"></div>
+            </div>
             <div className="hidden md:block flex-1 truncate">
-              <p className="text-[10px] font-bold text-slate-900 truncate">{user.displayName}</p>
-              <p className="text-[9px] text-emerald-600 font-bold">متصل الآن</p>
+              <p className="text-[11px] font-bold text-hayat-navy truncate">{user.displayName}</p>
+              <p className="text-[9px] text-slate-400 font-medium">{user.email?.split('@')[0]}</p>
             </div>
           </div>
         </div>
@@ -239,10 +279,22 @@ function NavItem({ icon, label, active, onClick }: { icon: any, label: string, a
   return (
     <button 
       onClick={onClick}
-      className={`flex items-center gap-4 p-3 rounded-xl w-full transition-all duration-200 ${active ? 'bg-hayat-navy text-white shadow-md' : 'hover:bg-slate-100 text-slate-500'}`}
+      className={`flex items-center gap-4 px-4 py-3.5 rounded-xl w-full transition-all duration-300 group ${
+        active 
+          ? 'bg-hayat-navy text-white shadow-hayat' 
+          : 'hover:bg-slate-100 text-slate-500 hover:text-hayat-navy'
+      }`}
     >
-      {icon}
-      <span className="hidden md:block font-medium text-sm">{label}</span>
+      <span className={`transition-transform duration-300 ${active ? 'scale-110' : 'group-hover:scale-110'}`}>
+        {icon}
+      </span>
+      <span className="hidden md:block font-bold text-xs tracking-wide">{label}</span>
+      {active && (
+        <motion.div 
+          layoutId="activeNav"
+          className="mr-auto hidden md:block w-1.5 h-1.5 bg-hayat-wood rounded-full"
+        />
+      )}
     </button>
   );
 }
@@ -298,8 +350,7 @@ function DashboardHeader({ user, budgets, expenses, revenues, waste, dashboardRe
     if (!dashboardRef.current) return;
     setIsExporting(true);
     try {
-      // Small timeout to ensure all components and charts are settled
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 800));
       
       const element = dashboardRef.current;
       const canvas = await html2canvas(element, {
@@ -310,25 +361,15 @@ function DashboardHeader({ user, budgets, expenses, revenues, waste, dashboardRe
         onclone: (clonedDoc) => {
           const clonedElement = clonedDoc.getElementById('dash');
           if (clonedElement) {
-             clonedElement.style.padding = '40px';
-             clonedElement.style.width = '1100px';
+             clonedElement.style.padding = '60px';
+             clonedElement.style.width = '1200px';
              clonedElement.style.background = '#F9F7F5';
-             // Force standard fonts and colors to prevent oklch/variable issues
              const allElements = clonedElement.querySelectorAll('*');
              allElements.forEach((el: any) => {
-                // If it's a svg or something similar, allow it
                 if (el.tagName === 'svg' || el.tagName === 'path' || el.tagName === 'circle') return;
-                
-                // Set explicit color if it seems to be using a class that might resolve to oklch
-                if (el.classList.contains('text-slate-500')) el.style.color = '#64748b';
-                if (el.classList.contains('text-hayat-navy')) el.style.color = '#1E293B';
-                if (el.classList.contains('text-hayat-wood')) el.style.color = '#A16207';
-                
-                // General fallback for all elements to ensure they have a parseable color
                 const computedStyle = window.getComputedStyle(el);
-                if (computedStyle.color.includes('oklch')) {
-                   el.style.color = '#1E293B';
-                }
+                if (computedStyle.color.includes('oklch')) { el.style.color = '#0F172A'; }
+                if (computedStyle.backgroundColor.includes('oklch')) { el.style.backgroundColor = 'transparent'; }
              });
           }
         }
@@ -342,7 +383,6 @@ function DashboardHeader({ user, budgets, expenses, revenues, waste, dashboardRe
       document.body.removeChild(link);
     } catch (err) {
       console.error("Export failed", err);
-      alert('فشل تصدير الصورة، يرجى المحاولة مرة أخرى');
     } finally {
       setIsExporting(false);
     }
@@ -352,8 +392,7 @@ function DashboardHeader({ user, budgets, expenses, revenues, waste, dashboardRe
     if (!dashboardRef.current) return;
     setIsExporting(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
+      await new Promise(resolve => setTimeout(resolve, 800));
       const element = dashboardRef.current;
       const canvas = await html2canvas(element, {
         scale: 2,
@@ -363,19 +402,14 @@ function DashboardHeader({ user, budgets, expenses, revenues, waste, dashboardRe
         onclone: (clonedDoc) => {
           const clonedElement = clonedDoc.getElementById('dash');
           if (clonedElement) {
-             clonedElement.style.padding = '40px';
-             clonedElement.style.width = '1100px';
+             clonedElement.style.padding = '60px';
+             clonedElement.style.width = '1200px';
              clonedElement.style.background = '#F9F7F5';
              const allElements = clonedElement.querySelectorAll('*');
              allElements.forEach((el: any) => {
                 if (el.tagName === 'svg' || el.tagName === 'path') return;
-                if (el.classList.contains('text-slate-500')) el.style.color = '#64748b';
-                if (el.classList.contains('text-hayat-navy')) el.style.color = '#1E293B';
-                
                 const computedStyle = window.getComputedStyle(el);
-                if (computedStyle.color.includes('oklch')) {
-                   el.style.color = '#1E293B';
-                }
+                if (computedStyle.color.includes('oklch')) { el.style.color = '#0F172A'; }
              });
           }
         }
@@ -385,12 +419,10 @@ function DashboardHeader({ user, budgets, expenses, revenues, waste, dashboardRe
       const imgProps = pdf.getImageProperties(imgData);
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-      
       pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
       pdf.save(`Hayat_Design_Report_${currentMonth}.pdf`);
     } catch (err) {
       console.error("PDF export failed", err);
-      alert('فشل تصدير PDF، يرجى المحاولة مرة أخرى');
     } finally {
       setIsExporting(false);
     }
@@ -400,76 +432,90 @@ function DashboardHeader({ user, budgets, expenses, revenues, waste, dashboardRe
   const wastePercentage = totalExpense > 0 ? (totalWaste / totalExpense) * 100 : 0;
 
   return (
-    <div className="mb-12">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 border-b border-hayat-border pb-8">
-        <div>
-          <h2 className="font-serif text-4xl" style={{ color: '#1E293B', marginBottom: '8px', letterSpacing: '-0.025em' }}>أهلاً بك، {user.displayName?.split(' ')[0]}</h2>
-          <p style={{ color: '#64748B', fontWeight: 500, fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: '#22C55E' }}></span>
-            متابعة الميزانية التشغيلية - {format(new Date(), 'MMMM yyyy')}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-3">
-          <div className="hidden lg:flex bg-white border border-hayat-border px-4 py-2 rounded-lg items-center gap-3 shadow-sm">
-             <div className="w-2 h-2 bg-hayat-wood rounded-full"></div>
-             <span className="text-xs font-bold text-slate-600 uppercase tracking-widest">تدفق نقدي إيجابي</span>
+    <div className="mb-14">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10 pb-10 border-b border-hayat-border/60">
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <h2 className="font-serif text-3xl md:text-5xl text-hayat-navy mb-3 tracking-tight">أهلاً بك، {user.displayName?.split(' ')[0]}</h2>
+          <div className="flex items-center gap-3">
+             <span className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">
+                <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
+                نشط الآن
+             </span>
+             <p className="text-slate-400 font-bold text-[11px] uppercase tracking-wider">
+               متابعة الأداء المالي - {format(new Date(), 'MMMM yyyy')}
+             </p>
           </div>
-          
-          <div className="flex bg-white border border-hayat-border p-1 rounded-lg shadow-sm" data-html2canvas-ignore="true">
-            <button 
-              onClick={exportAsPDF}
-              disabled={isExporting}
-              className="px-4 py-2 rounded-md text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 transition-all text-hayat-navy"
-            >
-              {isExporting ? 'جاري التحميل...' : 'PDF'}
-            </button>
-            <button 
-              onClick={exportAsImage}
-              disabled={isExporting}
-              className="px-4 py-2 rounded-md text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 transition-all text-hayat-navy border-x border-hayat-border"
-            >
-              صورة
-            </button>
-            <button 
-              onClick={downloadReportCSV}
-              disabled={isExporting}
-              className="px-4 py-2 rounded-md text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 transition-all text-hayat-navy"
-            >
-              CSV
-            </button>
+        </motion.div>
+        
+        <div className="flex flex-wrap gap-3" data-html2canvas-ignore="true">
+          <div className="flex bg-white/50 backdrop-blur-sm border border-hayat-border p-1.5 rounded-2xl shadow-hayat">
+            <ExportButton label="PDF" onClick={exportAsPDF} disabled={isExporting} />
+            <ExportButton label="صورة" onClick={exportAsImage} disabled={isExporting} />
+            <ExportButton label="CSV" onClick={downloadReportCSV} disabled={isExporting} last />
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard label="إجمالي المبيعات" value={totalRevenue} color="text-emerald-700" sub="+12% عن الشهر الماضي" />
-        <StatCard label="المصاريف الفعلية" value={totalExpense} color="text-rose-700" sub={`الميزانية الإجمالية: 15,000`} />
-        <StatCard label="صافي الربح" value={netProfit} color="text-hayat-navy" sub={`هامش الربح: ${totalRevenue > 0 ? Math.round((netProfit / totalRevenue) * 100) : 0}%`} highlight />
-        <StatCard label="معدل الهدر (Waste)" value={totalWaste} color="text-amber-700" sub={`نسبة الهدر للمصاريف: ${Math.round(wastePercentage)}%`} />
+        <StatCard label="إجمالي المبيعات" value={totalRevenue} delay={0.1} />
+        <StatCard label="المصاريف الفعلية" value={totalExpense} delay={0.2} />
+        <StatCard label="صافي الربح" value={netProfit} delay={0.3} highlight />
+        <StatCard label="قيمة الهدر" value={totalWaste} delay={0.4} color="#A16207" />
       </div>
     </div>
   );
 }
 
-function StatCard({ label, value, color, sub, highlight }: any) {
-  // Use explicit hex colors to avoid html2canvas oklch issues
-  const labelColor = "#94A3B8"; // slate-400
-  const navyColor = "#1E293B"; // hayat-navy
-  const woodColor = "#A16207"; // hayat-wood
+function ExportButton({ label, onClick, disabled, last }: { label: string, onClick: () => void, disabled: boolean, last?: boolean }) {
+  return (
+    <button 
+      onClick={onClick}
+      disabled={disabled}
+      className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-hayat-cream transition-all text-hayat-navy disabled:opacity-50 ${!last ? 'border-l border-hayat-border/40' : ''}`}
+    >
+      {label}
+    </button>
+  );
+}
+
+function StatCard({ label, value, delay, highlight, color }: any) {
+  const navyColor = "#0F172A";
+  const woodColor = "#A16207";
   
   return (
-    <div 
-      className={`p-6 rounded-xl transition-all border shadow-sm ${highlight ? 'scale-105' : ''}`}
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay }}
+      className={`p-8 rounded-3xl transition-all border shadow-hayat relative overflow-hidden group`}
       style={{ 
         backgroundColor: '#FFFFFF',
-        borderColor: highlight ? '#A16207' : '#e2e8f0',
+        borderColor: highlight ? woodColor : '#E2E8F0',
         borderWidth: highlight ? '2px' : '1px'
       }}
     >
-      <p className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: labelColor }}>{label}</p>
-      <p className="text-2xl font-bold mb-2" style={{ color: navyColor }}>{value.toLocaleString()} <span className="text-sm font-normal opacity-60">ريال</span></p>
-      <p className="text-[10px] font-medium" style={{ color: highlight ? woodColor : labelColor }}>{sub}</p>
-    </div>
+      {highlight && (
+         <div className="absolute top-0 right-0 w-24 h-24 bg-hayat-wood/5 rounded-bl-full -mr-12 -mt-12 transition-transform group-hover:scale-125"></div>
+      )}
+      <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-4 text-slate-400">{label}</p>
+      <div className="flex items-baseline gap-2">
+         <p className="text-3xl font-bold tracking-tight" style={{ color: color || navyColor }}>{value.toLocaleString()}</p>
+         <span className="text-[10px] font-bold text-slate-400">ريال</span>
+      </div>
+      <div className="mt-6 flex items-center gap-2">
+         <div className="h-1 flex-1 bg-slate-50 rounded-full overflow-hidden">
+            <motion.div 
+              initial={{ width: 0 }}
+              animate={{ width: '65%' }}
+              className="h-full bg-hayat-wood/20 rounded-full"
+            />
+         </div>
+         <span className="text-[9px] font-bold text-slate-300">Target</span>
+      </div>
+    </motion.div>
   );
 }
 
@@ -495,38 +541,66 @@ function DashboardContent({ budgets, expenses, revenues, waste }: any) {
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, 5);
 
+  const navyColor = "#0F172A";
+  const woodColor = "#A16207";
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Actual vs Budget - Span 2 */}
-        <div className="lg:col-span-2 bg-white p-8 rounded-2xl border border-hayat-border shadow-sm flex flex-col min-h-[450px]">
-          <div className="flex justify-between items-center mb-8">
-            <h3 className="text-lg font-bold" style={{ color: '#1E293B' }}>مقارنة الميزانية التقديرية بالإنفاق الفعلي</h3>
-            <div className="flex gap-4">
-               <div className="flex items-center gap-2 text-[10px] font-bold" style={{ color: '#94A3B8' }}><span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#f1f5f9' }}></span> تقديري</div>
-               <div className="flex items-center gap-2 text-[10px] font-bold" style={{ color: '#A16207' }}><span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#A16207' }}></span> فعلي</div>
+        <motion.div 
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="lg:col-span-2 card-hayat flex flex-col min-h-[500px]"
+        >
+          <div className="flex justify-between items-center mb-10">
+            <div>
+               <h3 className="text-xl font-bold mb-1" style={{ color: navyColor }}>مقارنة الإنفاق</h3>
+               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Estimated vs Actual</p>
+            </div>
+            <div className="flex gap-6">
+               <div className="flex items-center gap-2 text-[10px] font-black text-slate-300 uppercase tracking-widest">
+                  <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: '#F1F5F9' }}></div> 
+                  تقديري
+               </div>
+               <div className="flex items-center gap-2 text-[10px] font-black text-hayat-wood uppercase tracking-widest">
+                  <div className="w-2.5 h-2.5 rounded-sm shadow-sm" style={{ backgroundColor: woodColor }}></div> 
+                  فعلي
+               </div>
             </div>
           </div>
           <div className="flex-grow">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={budgetVsActual} barGap={8}>
+              <BarChart data={budgetVsActual} barGap={12}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" fontSize={11} tick={{ fill: '#64748b' }} axisLine={false} tickLine={false} />
-                <YAxis fontSize={11} tick={{ fill: '#64748b' }} axisLine={false} tickLine={false} />
+                <XAxis dataKey="name" fontSize={10} fontWeight={700} tick={{ fill: '#94a3b8' }} axisLine={false} tickLine={false} dy={10} />
+                <YAxis fontSize={10} fontWeight={700} tick={{ fill: '#94a3b8' }} axisLine={false} tickLine={false} dx={-10} />
                 <Tooltip 
-                  cursor={{ fill: '#f8fafc' }}
-                  contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.05)' }}
+                  cursor={{ fill: '#F9F7F5' }}
+                  contentStyle={{ 
+                    borderRadius: '16px', 
+                    border: '1px solid #e2e8f0', 
+                    boxShadow: '0 10px 15px -3px rgba(0,0,0,0.05)',
+                    padding: '12px'
+                  }}
                 />
-                <Bar name="التقديري" dataKey="target" fill="#f1f5f9" radius={[4, 4, 0, 0]} barSize={40} isAnimationActive={false} />
-                <Bar name="الفعلي" dataKey="actual" fill="#A16207" radius={[4, 4, 0, 0]} barSize={40} isAnimationActive={false} />
+                <Bar name="التقديري" dataKey="target" fill="#f1f5f9" radius={[6, 6, 0, 0]} barSize={34} isAnimationActive={false} />
+                <Bar name="الفعلي" dataKey="actual" fill={woodColor} radius={[6, 6, 0, 0]} barSize={34} isAnimationActive={false} />
               </BarChart>
             </ResponsiveContainer>
           </div>
-        </div>
+        </motion.div>
 
-        {/* Burn Rate / Analysis - Span 1 */}
-        <div className="bg-white p-8 rounded-2xl border border-hayat-border shadow-sm flex flex-col min-h-[450px]">
-          <h3 className="text-lg font-bold mb-8" style={{ color: '#1E293B' }}>مؤشر استهلاك الميزانية</h3>
+        {/* Analytics - Span 1 */}
+        <motion.div 
+           initial={{ opacity: 0, x: -20 }}
+           animate={{ opacity: 1, x: 0 }}
+           className="card-hayat flex flex-col min-h-[500px]"
+        >
+          <div className="mb-10">
+             <h3 className="text-xl font-bold mb-1" style={{ color: navyColor }}>مؤشر الاستهلاك</h3>
+             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Category Burn Rate</p>
+          </div>
           <div className="space-y-8 flex-grow">
             {budgetVsActual.map((item, idx) => {
               const percentage = item.target > 0 ? (item.actual / item.target) * 100 : 0;
@@ -534,19 +608,19 @@ function DashboardContent({ budgets, expenses, revenues, waste }: any) {
               const isOver = item.actual > item.target && item.target > 0;
               return (
                 <div key={idx}>
-                  <div className="flex justify-between text-[11px] mb-2 font-bold">
-                    <span style={{ color: '#475569' }}>{item.name}</span>
-                    <span style={{ color: isOver ? '#EF4444' : '#94A3B8' }}>
+                  <div className="flex justify-between items-end mb-2.5">
+                    <span className="text-[11px] font-bold" style={{ color: '#475569' }}>{item.name}</span>
+                    <span className="text-[10px] font-black" style={{ color: isOver ? '#EF4444' : '#94A3B8' }}>
                       {Math.round(percentage)}%
                     </span>
                   </div>
-                  <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: '#F1F5F9' }}>
+                  <div className="h-1.5 bg-slate-50 rounded-full overflow-hidden">
                     <motion.div 
                       initial={{ width: 0 }}
                       animate={{ width: `${cappedPercentage}%` }}
-                      transition={{ duration: 1, ease: "easeOut" }}
-                      className={`h-full rounded-full`}
-                      style={{ backgroundColor: isOver ? '#EF4444' : '#A16207' }}
+                      transition={{ duration: 1.5, ease: "circOut" }}
+                      className="h-full rounded-full"
+                      style={{ backgroundColor: isOver ? '#EF4444' : woodColor }}
                     />
                   </div>
                 </div>
@@ -554,86 +628,90 @@ function DashboardContent({ budgets, expenses, revenues, waste }: any) {
             })}
           </div>
           
-          <div className="mt-8 pt-8 border-t border-hayat-border">
-            <h4 className="text-sm font-bold mb-4" style={{ color: '#1E293B' }}>تحقق التدفق النقدي م6</h4>
-            <div className="h-40">
+          <div className="mt-10 pt-10 border-t border-hayat-border/60">
+            <h4 className="text-[10px] font-black uppercase tracking-widest mb-6 text-slate-400">Cash Flow Trend</h4>
+            <div className="h-32">
                <ResponsiveContainer width="100%" height="100%">
-                 <AreaChart data={generateCashFlowTrend(revenues, expenses)}>
-                   <defs>
-                     <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                       <stop offset="5%" stopColor="#A16207" stopOpacity={0.1}/>
-                       <stop offset="95%" stopColor="#A16207" stopOpacity={0}/>
-                     </linearGradient>
-                   </defs>
-                   <XAxis dataKey="month" hide />
-                   <Tooltip />
-                   <Area type="monotone" dataKey="net" stroke="#A16207" fill="url(#colorSales)" strokeWidth={2} isAnimationActive={false} />
-                 </AreaChart>
+                  <AreaChart data={generateCashFlowTrend(revenues, expenses)}>
+                    <defs>
+                      <linearGradient id="colorNet" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={woodColor} stopOpacity={0.15}/>
+                        <stop offset="95%" stopColor={woodColor} stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <XAxis dataKey="month" hide />
+                    <Tooltip cursor={false} />
+                    <Area type="monotone" dataKey="net" stroke={woodColor} fill="url(#colorNet)" strokeWidth={2.5} isAnimationActive={false} />
+                  </AreaChart>
                </ResponsiveContainer>
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
 
-      {/* Recent Lists Section */}
+      {/* Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Recent Revenues */}
-        <div className="bg-white p-8 rounded-2xl border border-hayat-border shadow-sm">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-lg font-bold" style={{ color: '#1E293B' }}>آخر المبيعات (هذا الشهر)</h3>
-            <span className="text-[10px] px-2 py-1 rounded font-bold" style={{ backgroundColor: '#ECFDF5', color: '#047857' }}>نشط</span>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="card-hayat">
+          <div className="flex justify-between items-center mb-8">
+            <div>
+               <h3 className="text-xl font-bold mb-1" style={{ color: navyColor }}>أحدث المبيعات</h3>
+               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Recent Revenue</p>
+            </div>
+            <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.4)]"></div>
           </div>
-          <div className="space-y-4">
+          <div className="space-y-1">
             {recentRevenues.length > 0 ? recentRevenues.map((r) => (
-              <div key={r.id} className="flex justify-between items-center p-3 rounded-xl hover:bg-slate-50 transition-colors border border-transparent hover:border-hayat-border">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#ECFDF5', color: '#10B981' }}>
-                    <TrendingUp size={18} />
+              <div key={r.id} className="flex justify-between items-center p-4 rounded-2xl hover:bg-hayat-accent transition-all group border border-transparent hover:border-hayat-border/40">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110" style={{ backgroundColor: '#ECFDF5', color: '#10B981' }}>
+                    <TrendingUp size={20} />
                   </div>
                   <div>
                     <p className="text-sm font-bold" style={{ color: '#334155' }}>{translateProduct(r.productType)}</p>
-                    <p className="text-[10px]" style={{ color: '#94A3B8' }}>{format(parseISO(r.date), 'yyyy/MM/dd')}</p>
+                    <p className="text-[10px] font-bold" style={{ color: '#94A3B8' }}>{format(parseISO(r.date), 'dd MMMM')}</p>
                   </div>
                 </div>
-                <div className="text-left">
-                  <p className="text-sm font-bold" style={{ color: '#047857' }}>{r.amount.toLocaleString()} ريال</p>
-                  <p className="text-[10px]" style={{ color: '#94A3B8' }}>#{r.orderNumber || '----'}</p>
+                <div className="text-left font-serif">
+                  <p className="text-lg font-bold" style={{ color: '#047857' }}>{r.amount.toLocaleString()} <span className="text-[10px] font-sans">ريال</span></p>
+                  <p className="text-[9px] font-bold uppercase tracking-tighter" style={{ color: '#94A3B8' }}>Reference: #{r.orderNumber || '----'}</p>
                 </div>
               </div>
             )) : (
-              <p className="text-center py-8 text-sm italic" style={{ color: '#94A3B8' }}>لا توجد مبيعات مسجلة هذا الشهر</p>
+              <p className="text-center py-12 text-sm italic" style={{ color: '#94A3B8' }}>لا توجد مبيعات مسجلة</p>
             )}
           </div>
-        </div>
+        </motion.div>
 
-        {/* Recent Expenses */}
-        <div className="bg-white p-8 rounded-2xl border border-hayat-border shadow-sm">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-lg font-bold" style={{ color: '#1E293B' }}>آخر المصاريف (هذا الشهر)</h3>
-            <span className="text-[10px] px-2 py-1 rounded font-bold" style={{ backgroundColor: '#FFF1F2', color: '#BE123C' }}>نشط</span>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="card-hayat">
+          <div className="flex justify-between items-center mb-8">
+            <div>
+               <h3 className="text-xl font-bold mb-1" style={{ color: navyColor }}>أحدث المصاريف</h3>
+               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Recent Expenses</p>
+            </div>
+            <div className="w-2.5 h-2.5 bg-rose-500 rounded-full shadow-[0_0_10px_rgba(244,63,94,0.4)]"></div>
           </div>
-          <div className="space-y-4">
+          <div className="space-y-1">
             {recentExpenses.length > 0 ? recentExpenses.map((e) => (
-              <div key={e.id} className="flex justify-between items-center p-3 rounded-xl hover:bg-slate-50 transition-colors border border-transparent hover:border-hayat-border">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#FFF1F2', color: '#F43F5E' }}>
-                    <Receipt size={18} />
+              <div key={e.id} className="flex justify-between items-center p-4 rounded-2xl hover:bg-hayat-accent transition-all group border border-transparent hover:border-hayat-border/40">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110" style={{ backgroundColor: '#FFF1F2', color: '#F43F5E' }}>
+                    <Receipt size={20} />
                   </div>
                   <div>
                     <p className="text-sm font-bold" style={{ color: '#334155' }}>{translateCategory(e.category)}</p>
-                    <p className="text-[10px]" style={{ color: '#94A3B8' }}>{format(parseISO(e.date), 'yyyy/MM/dd')}</p>
+                    <p className="text-[10px] font-bold" style={{ color: '#94A3B8' }}>{format(parseISO(e.date), 'dd MMMM')}</p>
                   </div>
                 </div>
-                <div className="text-left">
-                  <p className="text-sm font-bold" style={{ color: '#BE123C' }}>{e.amount.toLocaleString()} ريال</p>
-                  <p className="text-[10px] truncate max-w-[100px]" style={{ color: '#94A3B8' }}>{e.description || '----'}</p>
+                <div className="text-left font-serif">
+                  <p className="text-lg font-bold" style={{ color: '#BE123C' }}>{e.amount.toLocaleString()} <span className="text-[10px] font-sans">ريال</span></p>
+                  <p className="text-[9px] font-bold uppercase tracking-tighter truncate max-w-[120px]" style={{ color: '#94A3B8' }}>{e.description || 'General Operation'}</p>
                 </div>
               </div>
             )) : (
-              <p className="text-center py-8 text-sm italic" style={{ color: '#94A3B8' }}>لا توجد مصاريف مسجلة هذا الشهر</p>
+              <p className="text-center py-12 text-sm italic" style={{ color: '#94A3B8' }}>لا توجد مصاريف مسجلة</p>
             )}
           </div>
-        </div>
+        </motion.div>
       </div>
     </div>
   );
@@ -654,17 +732,24 @@ function DataListSection({ title, type, items, user, services }: { title: string
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-hayat-border">
-      <div className="bg-white p-8 flex justify-between items-center border-b border-hayat-border">
+    <motion.div 
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-white rounded-[2.5rem] shadow-hayat-lg overflow-hidden border border-hayat-border/60"
+    >
+      <div className="bg-white p-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-hayat-border/40">
         <div>
-          <h2 className="text-xl font-bold text-hayat-navy">{title}</h2>
-          <p className="text-slate-400 text-xs mt-1 font-medium">إدارة كافة السجلات التشغيلية</p>
+          <h2 className="text-2xl font-bold text-hayat-navy mb-1 tracking-tight">{title}</h2>
+          <div className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-hayat-wood flex-shrink-0"></span>
+            <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em]">Management & Archives</p>
+          </div>
         </div>
         <button 
           onClick={() => setShowAdd(!showAdd)} 
-          className="bg-hayat-navy text-white px-6 py-2 rounded-lg hover:bg-slate-800 transition-colors shadow-sm text-xs font-bold uppercase tracking-widest"
+          className={showAdd ? 'btn-secondary' : 'btn-primary'}
         >
-          {showAdd ? 'إلغاء' : 'إضافة جديد +'}
+          {showAdd ? 'إلغاء العملية' : 'سجل جديد +'}
         </button>
       </div>
 
@@ -674,9 +759,9 @@ function DataListSection({ title, type, items, user, services }: { title: string
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="overflow-hidden border-b border-hayat-border bg-slate-50/50"
+            className="overflow-hidden border-b border-hayat-border/40 bg-hayat-accent/30"
           >
-            <div className="p-8">
+            <div className="p-10">
               <RecordForm type={type} user={user} services={services} onComplete={() => setShowAdd(false)} />
             </div>
           </motion.div>
@@ -686,39 +771,96 @@ function DataListSection({ title, type, items, user, services }: { title: string
       <div className="p-0 overflow-x-auto">
         <table className="w-full text-right border-collapse">
           <thead>
-            <tr className="bg-slate-50 border-b border-hayat-border text-slate-400 text-[10px] uppercase tracking-wider font-bold">
-              <th className="py-4 px-6">التاريخ</th>
-              <th className="py-4 px-6">{type === 'budget' ? 'البند' : (type === 'revenue' ? 'المنتج' : 'الوصف')}</th>
-              <th className="py-4 px-6 text-left">المبلغ</th>
-              {type !== 'budget' && <th className="py-4 px-6">البيان / ملاحظات</th>}
-              <th className="py-4 px-6 w-16"></th>
+            <tr className="bg-hayat-accent border-b border-hayat-border/40 text-slate-400 text-[9px] uppercase tracking-[0.2em] font-black">
+              <th className="py-6 px-10">التاريخ</th>
+              <th className="py-6 px-10">{type === 'budget' ? 'بند الميزانية' : (type === 'revenue' ? 'المنتج / الطلب' : 'البيان')}</th>
+              <th className="py-6 px-10 text-left">القيمة المالية</th>
+              {type !== 'budget' && <th className="py-6 px-10">التفاصيل الإضافية</th>}
+              <th className="py-6 px-10 w-24"></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-hayat-border">
-            {items.sort((a, b) => b.createdAt?.seconds - a.createdAt?.seconds).map((item) => (
-              <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
-                <td className="py-4 px-6 text-xs text-slate-500 font-medium">{type === 'budget' ? item.month : format(parseISO(item.date), 'yyyy/MM/dd')}</td>
-                <td className="py-4 px-6 font-bold text-slate-700 text-sm">
-                  {type === 'budget' || type === 'expense' ? translateCategory(item.category) : 
-                   type === 'revenue' ? translateProduct(item.productType) : item.material}
+          <tbody className="divide-y divide-hayat-border/30">
+            {items.sort((a, b) => {
+              const aTime = a.createdAt?.seconds || 0;
+              const bTime = b.createdAt?.seconds || 0;
+              return bTime - aTime;
+            }).map((item) => (
+              <tr key={item.id} className="hover:bg-hayat-accent/40 transition-colors group">
+                <td className="py-6 px-10">
+                   <div className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-slate-200"></div>
+                      <span className="text-[11px] text-slate-400 font-bold tabular-nums">
+                        {type === 'budget' ? item.month : format(parseISO(item.date), 'yyyy / MM / dd')}
+                      </span>
+                   </div>
                 </td>
-                <td className="py-4 px-6 text-left">
-                  <span className={`font-bold text-sm ${type === 'revenue' ? 'text-emerald-700' : 'text-slate-900'}`}>
-                    {(item.amount || item.estimatedCost)?.toLocaleString()} <span className="text-[10px] text-slate-400 font-medium">ريال</span>
-                  </span>
+                <td className="py-6 px-10 font-bold text-hayat-navy text-sm">
+                   <div className="flex flex-col">
+                      <span>
+                        {type === 'budget' || type === 'expense' ? translateCategory(item.category) : 
+                         type === 'revenue' ? translateProduct(item.productType) : item.material}
+                      </span>
+                      {type === 'revenue' && item.orderNumber && (
+                        <span className="text-[9px] text-slate-400 font-bold">Ref: #{item.orderNumber}</span>
+                      )}
+                   </div>
                 </td>
-                {type !== 'budget' && <td className="py-4 px-6 text-slate-400 text-xs font-medium max-w-xs truncate">{item.description || item.reason || item.orderNumber}</td>}
-                <td className="py-4 px-6">
-                   <button onClick={() => handleDelete(item.id)} className="text-slate-300 hover:text-red-500 transition-colors">
-                     <Trash2 size={14} />
+                <td className="py-6 px-10 text-left">
+                  <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full font-serif font-bold text-base ${type === 'revenue' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-50 text-hayat-navy'}`}>
+                    {(item.amount || item.estimatedCost)?.toLocaleString()}
+                    <span className="text-[9px] font-sans font-black opacity-40 uppercase tracking-tighter">SAR</span>
+                  </div>
+                </td>
+                {type !== 'budget' && (
+                  <td className="py-6 px-10 text-slate-400 text-[11px] font-medium max-w-[200px] truncate tabular-nums">
+                    {item.description || item.reason || (item.orderNumber ? `Sale Transaction` : 'سجل تشغيلي عام')}
+                  </td>
+                )}
+                <td className="py-6 px-10 text-left">
+                   <button 
+                    onClick={() => handleDelete(item.id)} 
+                    className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-200 hover:text-rose-500 hover:bg-rose-50 transition-all opacity-0 group-hover:opacity-100"
+                   >
+                     <Trash2 size={16} />
                    </button>
                 </td>
               </tr>
             ))}
+            {items.length === 0 && (
+              <tr>
+                <td colSpan={5} className="py-20 text-center">
+                  <div className="flex flex-col items-center">
+                    <div className="w-16 h-16 bg-hayat-accent rounded-full flex items-center justify-center text-slate-300 mb-4">
+                      <LayoutDashboard size={32} />
+                    </div>
+                    <p className="text-slate-400 text-sm font-medium">لا توجد بيانات مسجلة حالياً</p>
+                  </div>
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
-    </div>
+
+      <div className="bg-hayat-accent/20 p-8 border-t border-hayat-border/40 flex justify-end">
+          <div className="flex items-center gap-10">
+             <div className="text-right">
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">عدد السجلات</p>
+                <p className="text-xl font-bold text-hayat-navy">{items.length}</p>
+             </div>
+             <div className="w-px h-10 bg-hayat-border/40"></div>
+             <div className="text-right">
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">إجمالي القيمة المالية</p>
+                <div className="flex items-baseline gap-2">
+                   <p className="text-2xl font-serif font-black text-hayat-navy">
+                     {items.reduce((acc, curr) => acc + (curr.amount || curr.estimatedCost || 0), 0).toLocaleString()}
+                   </p>
+                   <span className="text-[10px] font-bold text-slate-400">ريال</span>
+                </div>
+             </div>
+          </div>
+      </div>
+    </motion.div>
   );
 }
 
@@ -776,74 +918,94 @@ function RecordForm({ type, user, services, onComplete }: { type: any, user: Use
   };
 
   return (
-    <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-end">
+    <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 items-end">
       {type === 'budget' && (
         <>
-          <FormGroup label="الشهر" child={<input type="month" value={formData.month} onChange={e => setFormData({...formData, month: e.target.value})} className="form-input" required />} />
-          <FormGroup label="البند" child={
+          <FormGroup label="فترة الميزانية" child={<input type="month" value={formData.month} onChange={e => setFormData({...formData, month: e.target.value})} className="form-input" required />} />
+          <FormGroup label="تصنيف البند" child={
             <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className="form-input">
-              <option value="materials">خامات</option>
-              <option value="marketing">تسويق</option>
-              <option value="maintenance">صيانة</option>
-              <option value="wages">أجور</option>
-              <option value="other">أخرى</option>
+              <option value="materials">خامات أولية</option>
+              <option value="marketing">حملات تسويقية</option>
+              <option value="maintenance">صيانة وتشغيل</option>
+              <option value="wages">أجور وتكليفات</option>
+              <option value="other">مصاريف عامة</option>
             </select>
           } />
-          <FormGroup label="المبلغ التقديري" child={<input type="number" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} className="form-input" required />} />
+          <FormGroup label="الميزانية المقررة" child={
+            <div className="relative">
+              <input type="number" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} className="form-input pl-12" required />
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-300">SAR</span>
+            </div>
+          } />
         </>
       )}
 
       {type === 'expense' && (
         <>
-          <FormGroup label="التاريخ" child={<input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="form-input" required />} />
-          <FormGroup label="الفئة" child={
+          <FormGroup label="تاريخ الصرف" child={<input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="form-input" required />} />
+          <FormGroup label="فئة المصروف" child={
              <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className="form-input">
-              <option value="materials">خامات</option>
-              <option value="marketing">تسويق</option>
-              <option value="maintenance">صيانة</option>
-              <option value="wages">أجور</option>
-              <option value="other">أخرى</option>
+              <option value="materials">خامات أولية</option>
+              <option value="marketing">حملات تسويقية</option>
+              <option value="maintenance">صيانة وتشغيل</option>
+              <option value="wages">أجور وتكليفات</option>
+              <option value="other">مصاريف عامة</option>
             </select>
           } />
-          <FormGroup label="المبلغ" child={<input type="number" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} className="form-input" required />} />
-          <FormGroup label="البيان" child={<input type="text" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="form-input" />} />
+          <FormGroup label="القيمة الإجمالية" child={
+             <div className="relative">
+                <input type="number" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} className="form-input pl-12" required />
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-300">SAR</span>
+             </div>
+          } />
+          <FormGroup label="وصف العملية" child={<input type="text" placeholder="مثلاً: شراء خشب أكريليك" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="form-input" />} />
         </>
       )}
 
       {type === 'revenue' && (
         <>
-          <FormGroup label="التاريخ" child={<input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="form-input" required />} />
-          <FormGroup label="نوع المنتج" child={
+          <FormGroup label="تاريخ التحصيل" child={<input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="form-input" required />} />
+          <FormGroup label="طبيعة المنتج" child={
              <select value={formData.productType} onChange={e => setFormData({...formData, productType: e.target.value})} className="form-input">
-              <option value="acrylic">أكريليك</option>
-              <option value="wood">خشب</option>
-              <option value="svg">تصاميم رقمية (SVG)</option>
-              <option value="other">أخرى</option>
+              <option value="acrylic">منتجات أكريليك</option>
+              <option value="wood">منتجات خشبية</option>
+              <option value="svg">ملفات رقمية (SVG)</option>
+              <option value="other">منتجات أخرى</option>
             </select>
           } />
-          <FormGroup label="القيمة" child={<input type="number" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} className="form-input" required />} />
-          <FormGroup label="رقم الطلب" child={<input type="text" value={formData.orderNumber} onChange={e => setFormData({...formData, orderNumber: e.target.value})} className="form-input" />} />
+          <FormGroup label="قيمة المبيعات" child={
+            <div className="relative">
+               <input type="number" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} className="form-input pl-12" required />
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-300">SAR</span>
+            </div>
+          } />
+          <FormGroup label="رقم المرجعي / الطلب" child={<input type="text" placeholder="Exp: 50442" value={formData.orderNumber} onChange={e => setFormData({...formData, orderNumber: e.target.value})} className="form-input" />} />
         </>
       )}
 
       {type === 'waste' && (
         <>
-          <FormGroup label="التاريخ" child={<input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="form-input" required />} />
-          <FormGroup label="المادة المهدرة" child={<input type="text" value={formData.material} onChange={e => setFormData({...formData, material: e.target.value})} className="form-input" required />} />
-          <FormGroup label="التكلفة التقديرية" child={<input type="number" value={formData.estimatedCost} onChange={e => setFormData({...formData, estimatedCost: e.target.value})} className="form-input" required />} />
-          <FormGroup label="السبب" child={<input type="text" value={formData.reason} onChange={e => setFormData({...formData, reason: e.target.value})} className="form-input" />} />
+          <FormGroup label="تاريخ الرصد" child={<input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="form-input" required />} />
+          <FormGroup label="المادة التالفة" child={<input type="text" placeholder="نوع الخامة" value={formData.material} onChange={e => setFormData({...formData, material: e.target.value})} className="form-input" required />} />
+          <FormGroup label="التكلفة التقديرية" child={
+            <div className="relative">
+              <input type="number" value={formData.estimatedCost} onChange={e => setFormData({...formData, estimatedCost: e.target.value})} className="form-input pl-12" required />
+               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-300">SAR</span>
+            </div>
+          } />
+          <FormGroup label="سبب الهدر" child={<input type="text" placeholder="توضيح السبب" value={formData.reason} onChange={e => setFormData({...formData, reason: e.target.value})} className="form-input" />} />
         </>
       )}
 
-      <button type="submit" className="bg-hayat-navy text-white p-4 rounded-xl hover:bg-hayat-wood transition-colors shadow-lg font-bold">حفظ السجل</button>
+      <button type="submit" className="btn-primary h-[52px]">اعتماد البيانات</button>
     </form>
   );
 }
 
 function FormGroup({ label, child }: any) {
   return (
-    <div className="flex flex-col gap-2">
-      <label className="text-xs font-bold text-stone-400 uppercase tracking-widest">{label}</label>
+    <div className="flex flex-col gap-3 group">
+      <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] group-focus-within:text-hayat-wood transition-colors">{label}</label>
       {child}
     </div>
   );
