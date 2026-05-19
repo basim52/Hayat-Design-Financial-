@@ -1,0 +1,21 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Inter:wght@400;500;600&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Cormorant Garamond", serif;
+  
+  --color-hayat-cream: #FDFBF7;
+  --color-hayat-wood: #A16207;
+  --color-hayat-navy: #1E293B;
+  --color-hayat-border: #e2e8f0;
+}
+
+@layer components {
+  .form-input {
+    @apply bg-white border border-hayat-border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-hayat-wood/20 transition-all text-sm w-full shadow-sm;
+  }
+  .card-minimal {
+    @apply bg-white rounded-xl border border-hayat-border shadow-sm p-6;
+  }
+}

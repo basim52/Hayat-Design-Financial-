@@ -1,0 +1,97 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Master Gate / Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 2. Global Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+    function incoming() {
+      return request.resource.data;
+    }
+    function existing() {
+      return resource.data;
+    }
+
+    // Validation Blueprints
+    function isValidBudgetTarget(data) {
+      return data.keys().hasAll(['userId', 'category', 'amount', 'month', 'createdAt']) &&
+             data.keys().size() == 5 &&
+             data.userId == request.auth.uid &&
+             data.category in ['materials', 'marketing', 'maintenance', 'wages', 'other'] &&
+             data.amount is number && data.amount >= 0 &&
+             data.month is string && data.month.size() == 7 &&
+             data.createdAt == request.time;
+    }
+
+    function isValidExpense(data) {
+      return data.keys().hasAll(['userId', 'category', 'amount', 'date', 'createdAt', 'description']) &&
+             data.keys().size() == 6 &&
+             data.userId == request.auth.uid &&
+             data.category in ['materials', 'marketing', 'maintenance', 'wages', 'other'] &&
+             data.amount is number && data.amount >= 0 &&
+             data.createdAt == request.time;
+    }
+
+    function isValidRevenue(data) {
+      return data.keys().hasAll(['userId', 'amount', 'productType', 'date', 'createdAt', 'orderNumber', 'description']) &&
+             data.keys().size() == 7 &&
+             data.userId == request.auth.uid &&
+             data.productType in ['acrylic', 'wood', 'svg', 'other'] &&
+             data.amount is number && data.amount >= 0 &&
+             data.createdAt == request.time;
+    }
+
+    function isValidWaste(data) {
+      return data.keys().hasAll(['userId', 'material', 'estimatedCost', 'date', 'createdAt', 'reason']) &&
+             data.keys().size() == 6 &&
+             data.userId == request.auth.uid &&
+             data.estimatedCost is number && data.estimatedCost >= 0 &&
+             data.createdAt == request.time;
+    }
+
+    // 3. Collection Rules
+    match /budgets/{budgetId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(budgetId) && isValidBudgetTarget(incoming());
+      allow update: if isSignedIn() && isValidId(budgetId) && isValidBudgetTarget(incoming()) && (
+        incoming().diff(existing()).affectedKeys().hasOnly(['amount', 'category', 'month'])
+      ) && incoming().userId == existing().userId;
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    match /expenses/{expenseId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(expenseId) && isValidExpense(incoming());
+      allow update: if isSignedIn() && isValidId(expenseId) && isValidExpense(incoming()) && (
+        incoming().diff(existing()).affectedKeys().hasOnly(['amount', 'category', 'description', 'date'])
+      ) && incoming().userId == existing().userId;
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    match /revenues/{revenueId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(revenueId) && isValidRevenue(incoming());
+      allow update: if isSignedIn() && isValidId(revenueId) && isValidRevenue(incoming()) && (
+        incoming().diff(existing()).affectedKeys().hasOnly(['amount', 'productType', 'description', 'orderNumber', 'date'])
+      ) && incoming().userId == existing().userId;
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    match /waste/{wasteId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(wasteId) && isValidWaste(incoming());
+      allow update: if isSignedIn() && isValidId(wasteId) && isValidWaste(incoming()) && (
+        incoming().diff(existing()).affectedKeys().hasOnly(['material', 'estimatedCost', 'reason', 'date'])
+      ) && incoming().userId == existing().userId;
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+  }
+}

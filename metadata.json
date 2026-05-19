@@ -1,0 +1,6 @@
+{
+  "name": "Hayat Design Financial Dashboard",
+  "description": "A comprehensive financial monitoring tool for Hayat Design, tracking monthly budgets, expenses, revenues, and material waste with interactive visualizations.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

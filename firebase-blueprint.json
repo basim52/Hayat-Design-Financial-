@@ -1,0 +1,78 @@
+{
+  "entities": {
+    "BudgetTarget": {
+      "title": "Monthly Budget Target",
+      "description": "Planned budget for a specific category and month.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner of the budget." },
+        "category": { "type": "string", "enum": ["materials", "marketing", "maintenance", "wages", "other"] },
+        "amount": { "type": "number", "description": "Planned amount." },
+        "month": { "type": "string", "format": "YYYY-MM", "description": "Target month." },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "category", "amount", "month", "createdAt"]
+    },
+    "Expense": {
+      "title": "Actual Expense",
+      "description": "Record of a specific spending.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "category": { "type": "string", "enum": ["materials", "marketing", "maintenance", "wages", "other"] },
+        "amount": { "type": "number" },
+        "date": { "type": "string", "format": "date-time" },
+        "description": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "category", "amount", "date", "createdAt"]
+    },
+    "Revenue": {
+      "title": "Sales Record",
+      "description": "Record of a sale or order.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "orderNumber": { "type": "string" },
+        "amount": { "type": "number" },
+        "productType": { "type": "string", "enum": ["acrylic", "wood", "svg", "other"] },
+        "description": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "amount", "productType", "date", "createdAt"]
+    },
+    "WasteItem": {
+      "title": "Production Waste",
+      "description": "Record of wasted materials during production.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "material": { "type": "string" },
+        "estimatedCost": { "type": "number" },
+        "reason": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "material", "estimatedCost", "date", "createdAt"]
+    }
+  },
+  "firestore": {
+    "budgets/{budgetId}": {
+      "schema": "BudgetTarget",
+      "description": "Collection of monthly budget targets."
+    },
+    "expenses/{expenseId}": {
+      "schema": "Expense",
+      "description": "Collection of actual expenses."
+    },
+    "revenues/{revenueId}": {
+      "schema": "Revenue",
+      "description": "Collection of sales revenues."
+    },
+    "waste/{wasteId}": {
+      "schema": "WasteItem",
+      "description": "Collection of material waste records."
+    }
+  }
+}
