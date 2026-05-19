@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { Logo } from './components/Logo';
 import { 
   collection, 
   query, 
@@ -152,12 +153,7 @@ export default function App() {
           className="max-w-md w-full bg-white p-12 rounded-3xl shadow-xl border border-hayat-wood/10"
         >
           <div className="flex flex-col items-center mb-6">
-            <img 
-              src="/logo.png" 
-              alt="Hayat Design Logo" 
-              className="w-32 h-32 mb-4 object-contain"
-              referrerPolicy="no-referrer"
-            />
+            <Logo className="w-24 h-24 mb-4" />
             <h1 className="font-serif text-4xl text-hayat-navy">حياة ديزاين</h1>
           </div>
           <p className="text-slate-500 mb-8 leading-relaxed">اللوحة المالية الذكية لإدارة الميزانية وتتبع المبيعات</p>
@@ -179,17 +175,7 @@ export default function App() {
       <nav className="fixed bottom-0 w-full bg-white border-t border-hayat-border md:w-64 md:h-screen md:sticky md:top-0 md:bg-white md:border-r z-50">
         <div className="flex md:flex-col h-full p-4 justify-around md:justify-start gap-2">
           <div className="hidden md:block mb-8 p-4 border-b border-hayat-border pb-6">
-             <div className="flex items-center gap-3">
-               <img 
-                src="/logo.png" 
-                alt="Logo" 
-                className="w-10 h-10 object-contain"
-                referrerPolicy="no-referrer"
-               />
-               <h1 className="font-serif text-2xl text-hayat-navy">
-                 حياة ديزاين
-               </h1>
-             </div>
+             <Logo className="w-full" />
              <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-2 font-bold">Dashboard | لوحة التحكم</p>
           </div>
           
@@ -251,6 +237,47 @@ function DashboardHeader({ user, budgets, expenses, revenues }: any) {
   const totalExpense = monthExpenses.reduce((acc: number, curr: any) => acc + curr.amount, 0);
   const netProfit = totalRevenue - totalExpense;
 
+  const downloadReport = () => {
+    const currentMonth = format(new Date(), 'yyyy-MM');
+    const monthRevenues = revenues.filter((r: any) => format(parseISO(r.date), 'yyyy-MM') === currentMonth);
+    const monthExpenses = expenses.filter((e: any) => format(parseISO(e.date), 'yyyy-MM') === currentMonth);
+    const monthWaste = waste.filter((w: any) => format(parseISO(w.date), 'yyyy-MM') === currentMonth);
+
+    let csvContent = "\uFEFF"; // BOM for Arabic support
+    csvContent += "البيانات المالية لشهر " + format(new Date(), 'MMMM yyyy') + "\n\n";
+
+    // Sales
+    csvContent += "المبيعات\n";
+    csvContent += "التاريخ,المنتج,القيمة,رقم الطلب\n";
+    monthRevenues.forEach(r => {
+      csvContent += `${format(parseISO(r.date), 'yyyy-MM-dd')},${translateProduct(r.productType)},${r.amount},${r.orderNumber || ''}\n`;
+    });
+
+    // Expenses
+    csvContent += "\nالمصاريف\n";
+    csvContent += "التاريخ,الفئة,المبلغ,الوصف\n";
+    monthExpenses.forEach(e => {
+      csvContent += `${format(parseISO(e.date), 'yyyy-MM-dd')},${translateCategory(e.category)},${e.amount},${e.description || ''}\n`;
+    });
+
+    // Waste
+    csvContent += "\nالهدر\n";
+    csvContent += "التاريخ,المادة,التكلفة,السبب\n";
+    monthWaste.forEach(w => {
+      csvContent += `${format(parseISO(w.date), 'yyyy-MM-dd')},${w.material},${w.estimatedCost},${w.reason || ''}\n`;
+    });
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `Hayat_Design_Report_${currentMonth}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="mb-12">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 border-b border-hayat-border pb-8">
@@ -266,7 +293,12 @@ function DashboardHeader({ user, budgets, expenses, revenues }: any) {
              <div className="w-2 h-2 bg-hayat-wood rounded-full"></div>
              <span className="text-xs font-bold text-slate-600 uppercase tracking-widest">تدفق نقدي إيجابي</span>
           </div>
-          <button className="bg-hayat-navy text-white px-6 py-2 rounded-lg text-xs font-bold shadow-md hover:bg-slate-800 transition-all uppercase tracking-widest">تحميل التقرير</button>
+          <button 
+            onClick={downloadReport}
+            className="bg-hayat-navy text-white px-6 py-2 rounded-lg text-xs font-bold shadow-md hover:bg-slate-800 transition-all uppercase tracking-widest"
+          >
+            تحميل التقرير
+          </button>
         </div>
       </div>
 
