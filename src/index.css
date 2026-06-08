@@ -33,3 +33,30 @@
 .rtl {
   direction: rtl;
 }
+
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  nav, main, header, button, [data-html2canvas-ignore="true"] {
+    display: none !important;
+    visibility: hidden !important;
+  }
+  body * {
+    visibility: hidden;
+  }
+  #printable-voucher, #printable-voucher * {
+    visibility: visible;
+  }
+  #printable-voucher {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+}

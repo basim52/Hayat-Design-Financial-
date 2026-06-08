@@ -23,6 +23,8 @@ export interface Expense {
   date: string; // ISO string
   description: string;
   createdAt: any;
+  paymentMethod?: string;
+  taxAmount?: number;
 }
 
 export interface Revenue {
@@ -34,6 +36,8 @@ export interface Revenue {
   description: string;
   date: string; // ISO string
   createdAt: any;
+  paymentMethod?: string;
+  taxAmount?: number;
 }
 
 export interface WasteItem {
