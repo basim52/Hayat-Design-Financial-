@@ -84,6 +84,69 @@ import {
 
 // --- Helpers ---
 
+// Fix html2canvas unsupported oklch/oklab color parsing in modern browsers
+const cleanOklColorsAndPatchGetComputedStyle = (clonedDoc: Document) => {
+  const win = clonedDoc.defaultView;
+  if (win) {
+    const originalGetComputedStyle = win.getComputedStyle;
+    win.getComputedStyle = function (el: Element, pseudoElt?: string | null) {
+      const style = originalGetComputedStyle.call(this, el, pseudoElt);
+      return new Proxy(style, {
+        get(target, prop) {
+          const value = target[prop as any];
+          if (typeof value === 'string' && (value.includes('oklch') || value.includes('oklab'))) {
+            // Parse lightness to supply appropriate light/dark fallback colors
+            const match = value.match(/(?:oklch|oklab)\(\s*([0-9.-]+%?)/i);
+            let lightness = 0.5;
+            if (match) {
+              const rawVal = match[1];
+              if (rawVal.endsWith('%')) {
+                lightness = parseFloat(rawVal) / 100;
+              } else {
+                lightness = parseFloat(rawVal);
+              }
+            }
+            const propName = String(prop).toLowerCase();
+            if (propName.includes('background')) {
+              return lightness > 0.6 ? '#FFFFFF' : '#0F172A';
+            } else if (propName.includes('border')) {
+              return '#E2E8F0';
+            } else if (propName.includes('color')) {
+              return lightness > 0.6 ? '#FFFFFF' : '#0F172A';
+            } else if (propName.includes('fill')) {
+              return lightness > 0.6 ? '#FFFFFF' : '#888888';
+            } else if (propName.includes('stroke')) {
+              return lightness > 0.6 ? '#FFFFFF' : '#888888';
+            }
+            return lightness > 0.6 ? '#FFFFFF' : '#000000';
+          }
+          if (typeof value === 'function') {
+            return value.bind(target);
+          }
+          return value;
+        }
+      }) as any;
+    };
+  }
+
+  // 1. Process all styles safely with a regex that supports nesting
+  const oklColorRegex = /(oklch|oklab)\((?:[^()]+|\([^()]*\))*\)/gi;
+  clonedDoc.querySelectorAll('style').forEach(styleTag => {
+    if (styleTag.innerHTML.includes('oklch') || styleTag.innerHTML.includes('oklab')) {
+      styleTag.innerHTML = styleTag.innerHTML.replace(oklColorRegex, '#000000');
+    }
+  });
+
+  // 2. Process all style attributes if they contain oklch/oklab
+  clonedDoc.querySelectorAll('*').forEach((el: any) => {
+    if (el.style) {
+      if (el.style.cssText && (el.style.cssText.includes('oklch') || el.style.cssText.includes('oklab'))) {
+        el.style.cssText = el.style.cssText.replace(oklColorRegex, '#000000');
+      }
+    }
+  });
+};
+
 const safeFormat = (dateStr: string | undefined | null, formatStr: string) => {
   if (!dateStr) return '---';
   try {
@@ -664,32 +727,7 @@ function DashboardHeader({ user, budgets, expenses, revenues, waste, dashboardRe
         backgroundColor: '#F9F7F5',
         logging: false,
         onclone: (clonedDoc) => {
-          // 1. Robust oklch/oklab stripping from ALL stylesheets
-          clonedDoc.querySelectorAll('style').forEach(styleTag => {
-            if (styleTag.innerHTML.includes('oklch') || styleTag.innerHTML.includes('oklab')) {
-              styleTag.innerHTML = styleTag.innerHTML.replace(/(oklch|oklab)\([^)]+\)/g, '#000000');
-            }
-          });
-
-          // 2. Comprehensive element-level override
-          clonedDoc.querySelectorAll('*').forEach((el: any) => {
-            if (el.style) {
-              // Strip from inline style text
-              if (el.style.cssText && (el.style.cssText.includes('oklch') || el.style.cssText.includes('oklab'))) {
-                el.style.cssText = el.style.cssText.replace(/(oklch|oklab)\([^)]+\)/g, '#000000');
-              }
-              
-              // Override computed styles that html2canvas might still "see"
-              const computed = window.getComputedStyle(el);
-              if (computed.color.includes('oklch') || computed.color.includes('oklab')) el.style.color = '#0F172A';
-              if (computed.backgroundColor.includes('oklch') || computed.backgroundColor.includes('oklab')) {
-                el.style.backgroundColor = el.classList.contains('card-hayat') ? '#FFFFFF' : 'transparent';
-              }
-              if (computed.borderColor.includes('oklch') || computed.borderColor.includes('oklab')) el.style.borderColor = '#E2E8F0';
-              if (computed.fill?.includes('oklch') || computed.fill?.includes('oklab')) el.style.fill = '#888888';
-              if (computed.stroke?.includes('oklch') || computed.stroke?.includes('oklab')) el.style.stroke = '#888888';
-            }
-          });
+          cleanOklColorsAndPatchGetComputedStyle(clonedDoc);
 
           const clonedElement = clonedDoc.getElementById('dash');
           if (clonedElement) {
@@ -726,29 +764,7 @@ function DashboardHeader({ user, budgets, expenses, revenues, waste, dashboardRe
         backgroundColor: '#F9F7F5',
         logging: false,
         onclone: (clonedDoc) => {
-          // 1. Robust oklch/oklab stripping from ALL stylesheets
-          clonedDoc.querySelectorAll('style').forEach(styleTag => {
-            if (styleTag.innerHTML.includes('oklch') || styleTag.innerHTML.includes('oklab')) {
-              styleTag.innerHTML = styleTag.innerHTML.replace(/(oklch|oklab)\([^)]+\)/g, '#000000');
-            }
-          });
-
-          // 2. Comprehensive element-level override
-          clonedDoc.querySelectorAll('*').forEach((el: any) => {
-            if (el.style) {
-              if (el.style.cssText && (el.style.cssText.includes('oklch') || el.style.cssText.includes('oklab'))) {
-                el.style.cssText = el.style.cssText.replace(/(oklch|oklab)\([^)]+\)/g, '#000000');
-              }
-              const computed = window.getComputedStyle(el);
-              if (computed.color.includes('oklch') || computed.color.includes('oklab')) el.style.color = '#0F172A';
-              if (computed.backgroundColor.includes('oklch') || computed.backgroundColor.includes('oklab')) {
-                el.style.backgroundColor = el.classList.contains('card-hayat') ? '#FFFFFF' : 'transparent';
-              }
-              if (computed.borderColor.includes('oklch') || computed.borderColor.includes('oklab')) el.style.borderColor = '#E2E8F0';
-              if (computed.fill?.includes('oklch') || computed.fill?.includes('oklab')) el.style.fill = '#888888';
-              if (computed.stroke?.includes('oklch') || computed.stroke?.includes('oklab')) el.style.stroke = '#888888';
-            }
-          });
+          cleanOklColorsAndPatchGetComputedStyle(clonedDoc);
 
           const clonedElement = clonedDoc.getElementById('dash');
           if (clonedElement) {
@@ -1271,29 +1287,7 @@ function ReportsView({ expenses, revenues, budgets, waste = [], setActiveTab, se
         useCORS: true,
         backgroundColor: '#F9F7F5',
         onclone: (clonedDoc) => {
-           // 1. Robust oklch/oklab stripping from ALL stylesheets
-           clonedDoc.querySelectorAll('style').forEach(styleTag => {
-             if (styleTag.innerHTML.includes('oklch') || styleTag.innerHTML.includes('oklab')) {
-               styleTag.innerHTML = styleTag.innerHTML.replace(/(oklch|oklab)\([^)]+\)/g, '#000000');
-             }
-           });
-
-           // 2. Comprehensive element-level override
-           clonedDoc.querySelectorAll('*').forEach((el: any) => {
-             if (el.style) {
-               if (el.style.cssText && (el.style.cssText.includes('oklch') || el.style.cssText.includes('oklab'))) {
-                 el.style.cssText = el.style.cssText.replace(/(oklch|oklab)\([^)]+\)/g, '#000000');
-               }
-               const computed = window.getComputedStyle(el);
-               if (computed.color.includes('oklch') || clonedDoc.body.style.color.includes('oklab')) el.style.color = '#0F172A';
-               if (computed.backgroundColor.includes('oklch') || computed.backgroundColor.includes('oklab')) {
-                 el.style.backgroundColor = el.classList.contains('card-hayat') ? '#FFFFFF' : 'transparent';
-               }
-               if (computed.borderColor.includes('oklch') || computed.borderColor.includes('oklab')) el.style.borderColor = '#E2E8F0';
-               if (computed.fill?.includes('oklch') || computed.fill?.includes('oklab')) el.style.fill = '#888888';
-               if (computed.stroke?.includes('oklch') || computed.stroke?.includes('oklab')) el.style.stroke = '#888888';
-             }
-           });
+           cleanOklColorsAndPatchGetComputedStyle(clonedDoc);
 
            const el = clonedDoc.getElementById('reports-content');
            if (el) {
