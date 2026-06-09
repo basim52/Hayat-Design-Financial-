@@ -1250,6 +1250,10 @@ function InvoicePreviewModal({ invoice, settings, onClose }: { invoice: Invoice,
     setDownloadingPdf(true);
 
     try {
+      if (typeof document !== 'undefined' && document.fonts) {
+        await document.fonts.ready;
+      }
+
       const element = printRef.current;
       const canvas = await html2canvas(element, {
         scale: 2, // High resolution density
@@ -1257,6 +1261,37 @@ function InvoicePreviewModal({ invoice, settings, onClose }: { invoice: Invoice,
         backgroundColor: '#FFFFFF',
         onclone: (clonedDoc) => {
           cleanOklColorsAndPatchGetComputedStyle(clonedDoc);
+          
+          // Inject custom styling to resolve Arabic shaping and letter-spacing bugs in html2canvas exports
+          const style = clonedDoc.createElement('style');
+          style.innerHTML = `
+            @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Amiri:wght@400;700&display=swap');
+            
+            /* Reset letter-spacing globally inside PDF/Image print context to allow proper Arabic cursive linking */
+            * {
+              letter-spacing: 0px !important;
+              letter-spacing: normal !important;
+              text-rendering: optimizeLegibility !important;
+              -webkit-font-smoothing: antialiased !important;
+              font-feature-settings: "kern" 1, "liga" 1 !important;
+            }
+            
+            /* Apply beautiful Arabic fonts for templates inside export canvas */
+            .font-serif {
+              font-family: 'Amiri', 'Cormorant Garamond', Georgia, serif !important;
+            }
+            
+            body, .font-sans, html {
+              font-family: 'Cairo', 'Inter', system-ui, -apple-system, sans-serif !important;
+            }
+            
+            /* Force RTL layout properties */
+            [dir="rtl"] {
+              direction: rtl !important;
+              unicode-bidi: embed !important;
+            }
+          `;
+          clonedDoc.head.appendChild(style);
         }
       });
 
@@ -1299,6 +1334,10 @@ function InvoicePreviewModal({ invoice, settings, onClose }: { invoice: Invoice,
     setDownloadingImg(true);
 
     try {
+      if (typeof document !== 'undefined' && document.fonts) {
+        await document.fonts.ready;
+      }
+
       const element = printRef.current;
       const canvas = await html2canvas(element, {
         scale: 2,
@@ -1306,6 +1345,37 @@ function InvoicePreviewModal({ invoice, settings, onClose }: { invoice: Invoice,
         backgroundColor: '#FFFFFF',
         onclone: (clonedDoc) => {
           cleanOklColorsAndPatchGetComputedStyle(clonedDoc);
+          
+          // Inject custom styling to resolve Arabic shaping and letter-spacing bugs in html2canvas exports
+          const style = clonedDoc.createElement('style');
+          style.innerHTML = `
+            @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Amiri:wght@400;700&display=swap');
+            
+            /* Reset letter-spacing globally inside PDF/Image print context to allow proper Arabic cursive linking */
+            * {
+              letter-spacing: 0px !important;
+              letter-spacing: normal !important;
+              text-rendering: optimizeLegibility !important;
+              -webkit-font-smoothing: antialiased !important;
+              font-feature-settings: "kern" 1, "liga" 1 !important;
+            }
+            
+            /* Apply beautiful Arabic fonts for templates inside export canvas */
+            .font-serif {
+              font-family: 'Amiri', 'Cormorant Garamond', Georgia, serif !important;
+            }
+            
+            body, .font-sans, html {
+              font-family: 'Cairo', 'Inter', system-ui, -apple-system, sans-serif !important;
+            }
+            
+            /* Force RTL layout properties */
+            [dir="rtl"] {
+              direction: rtl !important;
+              unicode-bidi: embed !important;
+            }
+          `;
+          clonedDoc.head.appendChild(style);
         }
       });
 
@@ -1343,7 +1413,7 @@ function InvoicePreviewModal({ invoice, settings, onClose }: { invoice: Invoice,
         <html dir="rtl">
           <head>
             <title>فاتورة رقم ${invoice.invoiceNumber}</title>
-            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+            <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Amiri:wght@400;700&family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
             <script src="https://cdn.tailwindcss.com"></script>
             <script>
               tailwind.config = {
@@ -1371,9 +1441,17 @@ function InvoicePreviewModal({ invoice, settings, onClose }: { invoice: Invoice,
                   margin: 1cm;
                 }
               }
-              body {
-                font-family: 'Inter', sans-serif, system-ui;
+              body, .font-sans {
+                font-family: 'Cairo', 'Inter', sans-serif, system-ui;
                 background-color: white !important;
+              }
+              .font-serif {
+                font-family: 'Amiri', 'Cormorant Garamond', Georgia, serif !important;
+              }
+              /* Eliminate any tracking-wider or tracking-widest that disrupts Arabic cursive letter connection */
+              * {
+                letter-spacing: normal !important;
+                letter-spacing: 0px !important;
               }
             </style>
           </head>
@@ -1805,7 +1883,7 @@ ${itemsText}
                 {isCompact ? (
                   <div className={`${customerBoxClasses} ${sectionMy}`}>
                     <div className="text-right">
-                      <span className="text-[8.5px] font-black text-teal-800 uppercase tracking-wider block mb-0.5">العميل الموقّر:</span>
+                      <span className="text-[8.5px] font-black text-teal-800 uppercase block mb-0.5" style={{ letterSpacing: 'normal' }}>العميل الموقّر:</span>
                       <p className="text-xs font-black text-slate-800">{invoice.customerName}</p>
                       {invoice.customerPhone && (
                         <p className="text-[10px] text-slate-500 font-mono leading-tight">الجوال: {invoice.customerPhone}</p>
@@ -1818,7 +1896,7 @@ ${itemsText}
                 ) : (
                   <div className={`${customerBoxClasses} ${sectionMy}`}>
                     <div className={`p-4 md:p-5 text-right space-y-1 block ${isClassic ? 'border-l-2 border-slate-300' : ''}`}>
-                      <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-wider">العميل العزيز / مستلم الفاتورة:</h4>
+                      <h4 className="text-[9px] font-black text-slate-400 uppercase" style={{ letterSpacing: 'normal' }}>العميل العزيز / مستلم الفاتورة:</h4>
                       <p className={`text-sm font-black ${primaryColText}`}>{invoice.customerName}</p>
                       {invoice.customerPhone && (
                         <p className="text-xs text-slate-500 font-mono font-bold">رقم الجوال: {invoice.customerPhone}</p>
@@ -1826,7 +1904,7 @@ ${itemsText}
                     </div>
 
                     <div className="p-4 md:p-5 text-right space-y-1 text-xs text-slate-600 flex flex-col justify-center">
-                      <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-wider">تفاصيل الدفع والتسوية:</h4>
+                      <h4 className="text-[9px] font-black text-slate-400 uppercase" style={{ letterSpacing: 'normal' }}>تفاصيل الدفع والتسوية:</h4>
                       <p className="flex justify-between">
                         <span>حالة المعاملة الرقمية:</span>
                         <span className="text-emerald-700 font-extrabold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 font-sans font-bold text-[10px]">مكتملة ومصدقة</span>
@@ -1874,7 +1952,7 @@ ${itemsText}
                   <div className="flex flex-col justify-end text-right space-y-3">
                     {invoice.notes && (
                       <div className="p-3 bg-slate-50/80 rounded-xl border border-slate-200 text-right">
-                        <h5 className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">ملاحظات والتزامات:</h5>
+                        <h5 className="text-[9px] font-black text-slate-400 uppercase mb-0.5" style={{ letterSpacing: 'normal' }}>ملاحظات والتزامات:</h5>
                         <p className="text-[10px] leading-relaxed text-slate-600">{invoice.notes}</p>
                       </div>
                     )}
