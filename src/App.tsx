@@ -1797,12 +1797,12 @@ function ReportsView({ expenses, revenues, budgets, waste = [], setActiveTab, se
               </div>
 
               {/* VAT summary box */}
-              <div className="bg-hayat-accent/20 border border-hayat-border/30 p-5 rounded-2xl space-y-2">
-                <div className="flex items-center gap-2 text-hayat-navy">
-                  <Receipt className="w-5 h-5" />
-                  <span className="font-black text-sm">4. تسويات ضريبة القيمة المضافة (VAT Summary)</span>
-                </div>
-                {settings.isTaxRegistered ? (
+              {settings.isTaxRegistered && (
+                <div className="bg-hayat-accent/20 border border-hayat-border/30 p-5 rounded-2xl space-y-2">
+                  <div className="flex items-center gap-2 text-hayat-navy">
+                    <Receipt className="w-5 h-5" />
+                    <span className="font-black text-sm">4. تسويات ضريبة القيمة المضافة (VAT Summary)</span>
+                  </div>
                   <div className="space-y-1.5 text-[11px]">
                     <div className="flex justify-between">
                       <span className="text-slate-500 font-bold">الضريبة المخرجة (المحصلة من العملاء)</span>
@@ -1819,12 +1819,8 @@ function ReportsView({ expenses, revenues, budgets, waste = [], setActiveTab, se
                       </span>
                     </div>
                   </div>
-                ) : (
-                  <p className="text-[11px] text-slate-400 italic font-bold pt-2 leading-relaxed">
-                    النظام مُسجل حالياِ كمنشأة معفاة. يمكن تعديل الرقم الضريبي والهيكل الضريبي من قائمة الإعدادات لبدء تجميع كشوفات الضريبة المضافة.
-                  </p>
-                )}
-              </div>
+                </div>
+              )}
             </div>
 
             {/* Final bottom audit total */}
@@ -2721,24 +2717,20 @@ function ReceiptVoucherModal({ item, type, settings, onClose }: { item: any, typ
 
           {/* Financial Receipt Grid */}
           <div className="space-y-3" dir="rtl">
-            <div className="flex justify-between items-center text-xs text-slate-500 font-bold font-sans">
-              <span>القيمة الخاضعة للضريبة</span>
-              <span className="font-bold tabular-nums">{beforeTaxAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ريال</span>
-            </div>
-            
             {settings.isTaxRegistered ? (
-              <div className="flex justify-between items-center text-xs text-slate-500 border-b border-dashed border-hayat-border/40 pb-3 font-bold font-sans">
-                <span>ضريبة القيمة المضافة ({taxRate}%)</span>
-                <span className="font-bold tabular-nums">{taxAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ريال</span>
-              </div>
-            ) : (
-              <div className="flex justify-between items-center text-xs text-slate-400 border-b border-dashed border-hayat-border/40 pb-3 italic font-bold font-sans">
-                <span>ضريبة القيمة المضافة</span>
-                <span className="font-black text-[9px] uppercase text-amber-700">المتجر غير خاضع للضريبة حالياً</span>
-              </div>
-            )}
+              <>
+                <div className="flex justify-between items-center text-xs text-slate-500 font-bold font-sans">
+                  <span>القيمة الخاضعة للضريبة</span>
+                  <span className="font-bold tabular-nums">{beforeTaxAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ريال</span>
+                </div>
+                <div className="flex justify-between items-center text-xs text-slate-500 border-b border-dashed border-hayat-border/40 pb-3 font-bold font-sans">
+                  <span>ضريبة القيمة المضافة ({taxRate}%)</span>
+                  <span className="font-bold tabular-nums">{taxAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ريال</span>
+                </div>
+              </>
+            ) : null}
 
-            <div className="flex justify-between items-center pt-3">
+            <div className={`flex justify-between items-center ${settings.isTaxRegistered ? 'pt-3' : 'border-b border-dashed border-hayat-border/40 pb-3'}`}>
               <span className="text-sm font-bold text-hayat-navy">المجموع الإجمالي النهائي</span>
               <span className="font-serif font-black text-lg md:text-xl text-hayat-navy tabular-nums font-sans">
                 {amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {settings.currency}
@@ -2747,16 +2739,12 @@ function ReceiptVoucherModal({ item, type, settings, onClose }: { item: any, typ
           </div>
 
           {/* Business and Tax Details */}
-          <div className="bg-slate-50 border border-slate-200/50 p-4 rounded-xl text-center space-y-1 font-sans">
-            {settings.isTaxRegistered ? (
-              <>
-                <p className="text-[9px] font-bold text-slate-600">الرقم الضريبي للمنشأة: <span className="font-mono tabular-nums text-slate-900">{settings.taxNumber}</span></p>
-                <p className="text-[9px] text-slate-400">فاتورة ضريبية مبسطة صادرة طبقا لتعليمات هيئة الزكاة والضريبة والجمارك</p>
-              </>
-            ) : (
-              <p className="text-[9px] font-bold text-slate-500">هذه المنشأة معفاة من ضريبة القيمة المضافة أو غير خاضعة لها بموجب الضوابط حالياً.</p>
-            )}
-          </div>
+          {settings.isTaxRegistered && (
+            <div className="bg-slate-50 border border-slate-200/50 p-4 rounded-xl text-center space-y-1 font-sans">
+              <p className="text-[9px] font-bold text-slate-600">الرقم الضريبي للمنشأة: <span className="font-mono tabular-nums text-slate-900">{settings.taxNumber}</span></p>
+              <p className="text-[9px] text-slate-400">فاتورة ضريبية مبسطة صادرة طبقا لتعليمات هيئة الزكاة والضريبة والجمارك</p>
+            </div>
+          )}
 
           {/* Descriptions/Notes */}
           {item.description && (

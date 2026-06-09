@@ -18,7 +18,9 @@ import {
   Sparkles,
   Percent,
   Check,
-  Edit
+  Edit,
+  Share2,
+  Copy
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { format } from 'date-fns';
@@ -441,14 +443,15 @@ function AddEditInvoiceModal({ invoice, user, services, settings, onClose }: { i
   }, [items]);
 
   const calculatedTaxAmount = useMemo(() => {
+    if (!settings.isTaxRegistered) return 0;
     const subAfterDiscount = calculatedSubtotal - discount;
     return Math.max(0, parseFloat(((subAfterDiscount * taxRate) / 100).toFixed(2)));
-  }, [calculatedSubtotal, taxRate, discount]);
+  }, [calculatedSubtotal, taxRate, discount, settings.isTaxRegistered]);
 
   const calculatedGrandTotal = useMemo(() => {
     const subAfterDiscount = calculatedSubtotal - discount;
-    return Math.max(0, subAfterDiscount + calculatedTaxAmount);
-  }, [calculatedSubtotal, discount, calculatedTaxAmount]);
+    return Math.max(0, subAfterDiscount + (settings.isTaxRegistered ? calculatedTaxAmount : 0));
+  }, [calculatedSubtotal, discount, calculatedTaxAmount, settings.isTaxRegistered]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -475,10 +478,10 @@ function AddEditInvoiceModal({ invoice, user, services, settings, onClose }: { i
       customLogoBase64: customLogoBase64 || '',
       items: filledItems,
       subtotal: Number(calculatedSubtotal) || 0,
-      taxRate: Number(taxRate) || 0,
-      taxAmount: Number(calculatedTaxAmount) || 0,
+      taxRate: settings.isTaxRegistered ? (Number(taxRate) || 0) : 0,
+      taxAmount: settings.isTaxRegistered ? (Number(calculatedTaxAmount) || 0) : 0,
       discount: Number(discount) || 0,
-      grandTotal: Number(calculatedGrandTotal) || 0,
+      grandTotal: settings.isTaxRegistered ? (Number(calculatedGrandTotal) || 0) : (Number(calculatedSubtotal) - Number(discount)),
       updatedAt: serverTimestamp()
     };
 
@@ -526,34 +529,35 @@ function AddEditInvoiceModal({ invoice, user, services, settings, onClose }: { i
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <motion.div 
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
-        className="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-5xl overflow-hidden my-8"
+        className="bg-white rounded-[2rem] shadow-2xl border border-slate-100 w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden my-auto"
       >
-        {/* Modal Header */}
-        <div className="bg-slate-50 px-8 py-5 border-b border-slate-200/60 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <span className="p-2 rounded-xl bg-hayat-navy/5 text-hayat-navy">
-              <FileText size={18} />
-            </span>
-            <h3 className="text-lg font-bold text-hayat-navy">
-              {isEdit ? 'تعديل الفاتورة الصادرة' : 'إنشاء فاتورة جديدة'}
-            </h3>
+        <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
+          {/* Modal Header */}
+          <div className="bg-slate-50 px-8 py-5 border-b border-slate-200/60 flex justify-between items-center flex-shrink-0">
+            <div className="flex items-center gap-2">
+              <span className="p-2 rounded-xl bg-hayat-navy/5 text-hayat-navy">
+                <FileText size={18} />
+              </span>
+              <h3 className="text-lg font-bold text-hayat-navy">
+                {isEdit ? 'تعديل الفاتورة الصادرة' : 'إنشاء فاتورة جديدة'}
+              </h3>
+            </div>
+            <button 
+              type="button" 
+              onClick={onClose} 
+              className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-all border border-slate-200/50"
+            >
+              <X size={15} />
+            </button>
           </div>
-          <button 
-            type="button" 
-            onClick={onClose} 
-            className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-all border border-slate-200/50"
-          >
-            <X size={15} />
-          </button>
-        </div>
 
-        {/* Modal Form */}
-        <form onSubmit={handleSubmit} className="p-8 space-y-6 overflow-y-auto max-h-[75vh] scrollbar-thin">
+          {/* Scrollable Form Content */}
+          <div className="flex-1 overflow-y-auto p-8 space-y-6 scrollbar-thin">
           {/* Metadata Section */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="flex flex-col gap-2">
@@ -836,19 +840,21 @@ function AddEditInvoiceModal({ invoice, user, services, settings, onClose }: { i
               </div>
 
               {/* VAT selection */}
-              <div className="flex items-center justify-between gap-2 border-t border-slate-200/50 pt-2.5">
-                <span className="text-xs text-slate-500">ضريبة القيمة المضافة (%)</span>
-                <input 
-                  type="number" 
-                  min="0"
-                  max="100"
-                  value={taxRate}
-                  onChange={e => setTaxRate(Number(e.target.value))}
-                  className="w-24 bg-white border border-slate-200 rounded-xl px-2 py-1 text-xs text-center font-bold text-slate-700 outline-none"
-                />
-              </div>
+              {settings.isTaxRegistered && (
+                <div className="flex items-center justify-between gap-2 border-t border-slate-200/50 pt-2.5">
+                  <span className="text-xs text-slate-500">ضريبة القيمة المضافة (%)</span>
+                  <input 
+                    type="number" 
+                    min="0"
+                    max="100"
+                    value={taxRate}
+                    onChange={e => setTaxRate(Number(e.target.value))}
+                    className="w-24 bg-white border border-slate-200 rounded-xl px-2 py-1 text-xs text-center font-bold text-slate-700 outline-none"
+                  />
+                </div>
+              )}
 
-              {taxRate > 0 && (
+              {settings.isTaxRegistered && taxRate > 0 && (
                 <div className="flex justify-between items-center text-xs text-slate-500 border-t border-slate-200/30 pt-1">
                   <span>قيمة الضريبة المحسوبة</span>
                   <span className="font-serif text-[11px] font-bold">+{calculatedTaxAmount.toLocaleString()} ريال</span>
@@ -862,18 +868,20 @@ function AddEditInvoiceModal({ invoice, user, services, settings, onClose }: { i
             </div>
           </div>
 
-          {/* Form Actions footer */}
-          <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
+          </div>
+
+          {/* Form Actions footer - Sticky */}
+          <div className="flex justify-end gap-3 p-6 bg-slate-50 border-t border-slate-150/60 flex-shrink-0">
             <button 
               type="button" 
               onClick={onClose} 
-              className="px-6 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-500 hover:bg-slate-50"
+              className="px-6 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors"
             >
               إلغاء
             </button>
             <button 
               type="submit" 
-              className="px-8 py-2.5 rounded-xl bg-hayat-navy text-white text-xs font-extrabold hover:bg-opacity-90 shadow-lg shadow-slate-200"
+              className="px-8 py-2.5 rounded-xl bg-hayat-navy text-white text-xs font-extrabold hover:bg-opacity-90 shadow-lg shadow-slate-200 transition-colors"
             >
               جاهز وحفظ الفاتورة
             </button>
@@ -1012,14 +1020,25 @@ function InvoicePreviewModal({ invoice, settings, onClose }: { invoice: Invoice,
     }
   };
 
-  // Browser standard print action - beautifully compiled via Tailwind CDN
+  // Browser standard print action - beautifully compiled via Tailwind CDN using sandboxed-friendly virtual iframe
   const handlePrint = () => {
     const printContent = printRef.current?.innerHTML;
     if (!printContent) return;
     
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      printWindow.document.write(`
+    // Create a hidden iframe representing a printing gateway to survive iframes
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    document.body.appendChild(iframe);
+    
+    const iframeDoc = iframe.contentWindow?.document;
+    if (iframeDoc) {
+      iframeDoc.open();
+      iframeDoc.write(`
         <html dir="rtl">
           <head>
             <title>فاتورة رقم ${invoice.invoiceNumber}</title>
@@ -1064,41 +1083,110 @@ function InvoicePreviewModal({ invoice, settings, onClose }: { invoice: Invoice,
             <script>
               setTimeout(function() {
                 window.print();
-                window.close();
+                setTimeout(function() {
+                  window.frameElement?.parentNode?.removeChild(window.frameElement);
+                }, 500);
               }, 700);
             </script>
           </body>
         </html>
       `);
-      printWindow.document.close();
+      iframeDoc.close();
+      
+      // Delay printing trigger slightly to let content build
+      setTimeout(() => {
+        iframe.contentWindow?.focus();
+        try {
+          iframe.contentWindow?.print();
+        } catch (e) {
+          console.error("Iframe printing support failure:", e);
+        }
+      }, 1000);
+    }
+  };
+
+  const [copied, setCopied] = useState(false);
+
+  const handleWhatsAppShare = () => {
+    const itemsText = (invoice.items || []).map((item, idx) => 
+      `${idx + 1}. ${item.name} | الكمية: ${item.quantity} | السعر: ${item.price} ريال`
+    ).join('\n');
+
+    const hasTax = invoice.taxRate > 0;
+    const shareText = `*${hasTax ? 'فاتورة ضريبية مبسطة' : 'فاتورة مبيعات مبسطة'} صادرة من:* ${settings.storeName}
+*رقم الفاتورة:* ${invoice.invoiceNumber}
+*تاريخ الإصدار:* ${invoice.date}
+*تاريخ الاستحقاق:* ${invoice.dueDate || 'غير محدد'}
+*العميل الموقر:* ${invoice.customerName}
+${invoice.customerPhone ? `*رقم هاتف العميل:* ${invoice.customerPhone}` : ''}
+----------------------------------------
+*التفاصيل والبنود:*
+${itemsText}
+----------------------------------------
+*المجموع الكلي المبدئي:* ${invoice.subtotal.toLocaleString()} ريال
+${invoice.discount > 0 ? `*الخصم المطبق:* ${invoice.discount.toLocaleString()} ريال` : ''}
+${hasTax ? `*ضريبة القيمة المضافة (${invoice.taxRate}%):* ${invoice.taxAmount.toLocaleString()} ريال` : ''}
+*المجموع النهائي الصافي:* ${invoice.grandTotal.toLocaleString()} ريال
+
+_نشكركم لثقتكم الغالية بنا وبخدماتنا._`;
+
+    const encodedText = encodeURIComponent(shareText);
+    const whatsappUrl = `https://api.whatsapp.com/send?phone=${invoice.customerPhone || ''}&text=${encodedText}`;
+    window.open(whatsappUrl, '_blank');
+  };
+
+  const handleCopyClipboard = async () => {
+    const itemsText = (invoice.items || []).map((item, idx) => 
+      `• ${item.name} | الكمية: ${item.quantity} | السعر: ${item.price} ريال`
+    ).join('\n');
+
+    const hasTax = invoice.taxRate > 0;
+    const shareText = `*${hasTax ? 'فاتورة ضريبية' : 'فاتورة مبيعات'} من:* ${settings.storeName}
+*رقم الفاتورة:* ${invoice.invoiceNumber}
+*التاريخ:* ${invoice.date}
+*العميل الموقر:* ${invoice.customerName}
+----------------------------------------
+*التفاصيل والبنود:*
+${itemsText}
+----------------------------------------
+*المجموع النهائي الصافي:* ${invoice.grandTotal.toLocaleString()} ريال`;
+
+    try {
+      await navigator.clipboard.writeText(shareText);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy text:', err);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
+    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <motion.div 
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
-        className="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-4xl overflow-hidden my-8"
+        className="bg-white rounded-[2rem] shadow-2xl border border-slate-100 w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden my-auto"
       >
         {/* Navigation actions bar */}
-        <div className="px-8 py-4 bg-slate-50 border-b border-slate-150/60 flex flex-wrap justify-between items-center gap-4">
+        <div className="px-8 py-4 bg-slate-50 border-b border-slate-150/60 flex flex-wrap justify-between items-center gap-4 flex-shrink-0">
           <div className="flex items-center gap-2">
             <Printer size={16} className="text-slate-500" />
-            <span className="text-xs font-extrabold text-slate-600">الفاتورة المجهزة للعرض والطباعة</span>
+            <span className="text-xs font-extrabold text-slate-600">عرض وتصدير الفاتورة</span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 flex-wrap">
             <button 
               onClick={handlePrint}
+              type="button"
               className="px-3 py-1.5 rounded-lg text-xs font-bold bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition-colors flex items-center gap-1.5"
             >
               <Printer size={13} />
-              <span>طباعة</span>
+              <span>طباعة مباشرة</span>
             </button>
             <button 
               onClick={handleExportPDF}
+              type="button"
               disabled={downloadingPdf}
               className="px-3 py-1.5 rounded-lg text-xs font-bold bg-hayat-navy text-white hover:bg-opacity-90 transition-colors flex items-center gap-1.5 disabled:opacity-50"
             >
@@ -1107,15 +1195,47 @@ function InvoicePreviewModal({ invoice, settings, onClose }: { invoice: Invoice,
             </button>
             <button 
               onClick={handleExportImage}
+              type="button"
               disabled={downloadingImg}
-              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 transition-colors flex items-center gap-1.5 disabled:opacity-50"
+              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors flex items-center gap-1.5 disabled:opacity-50"
             >
               <FileImage size={13} />
               <span>{downloadingImg ? 'جاري تصدير الصورة...' : 'حفظ كصورة'}</span>
             </button>
-            <div className="h-6 w-px bg-slate-200 mx-1"></div>
+
+            <span className="h-6 w-px bg-slate-200 mx-1"></span>
+
+            <button 
+              onClick={handleWhatsAppShare}
+              type="button"
+              className="px-3 py-1.5 rounded-lg text-xs font-extrabold bg-emerald-600 text-white hover:bg-emerald-700 transition-colors flex items-center gap-1.5"
+            >
+              <Share2 size={13} />
+              <span>مشاركة عبر واتساب</span>
+            </button>
+            <button 
+              onClick={handleCopyClipboard}
+              type="button"
+              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors flex items-center gap-1.5"
+            >
+              {copied ? (
+                <>
+                  <Check size={13} className="text-emerald-600 animate-pulse" />
+                  <span className="text-emerald-600">تم النسخ!</span>
+                </>
+              ) : (
+                <>
+                  <Copy size={13} />
+                  <span>نسخ النص</span>
+                </>
+              )}
+            </button>
+
+            <span className="h-6 w-px bg-slate-200 mx-1"></span>
+
             <button 
               onClick={onClose}
+              type="button"
               className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-200/50 hover:text-slate-600 font-bold transition-all border border-slate-200/60 bg-white"
             >
               <X size={14} />
@@ -1124,7 +1244,7 @@ function InvoicePreviewModal({ invoice, settings, onClose }: { invoice: Invoice,
         </div>
 
         {/* Invoice template container */}
-        <div className="p-8 max-h-[70vh] overflow-y-auto scrollbar-thin bg-slate-100/40">
+        <div className="flex-1 overflow-y-auto p-8 scrollbar-thin bg-slate-100/40">
           <div 
             ref={printRef}
             id="invoice-document"
@@ -1142,7 +1262,7 @@ function InvoicePreviewModal({ invoice, settings, onClose }: { invoice: Invoice,
                     {settings.contactPhone && (
                       <p className="text-[9px] text-slate-400 font-mono mt-0.5">{settings.contactPhone}</p>
                     )}
-                    {settings.taxNumber && (
+                    {settings.isTaxRegistered && settings.taxNumber && (
                       <p className="text-[9px] text-slate-400 font-bold mt-1">الرقم الضريبي: {settings.taxNumber}</p>
                     )}
                   </div>
@@ -1150,7 +1270,7 @@ function InvoicePreviewModal({ invoice, settings, onClose }: { invoice: Invoice,
 
                 <div className="text-left font-mono">
                   <span className="bg-slate-100 text-[10px] text-slate-600 font-extrabold px-3 py-1 rounded-full border border-slate-200/50 invoice-badge text-center inline-block mb-3.5">
-                    فاتورة ضريبية مبسطة
+                    {invoice.taxRate > 0 ? "فاتورة ضريبية مبسطة" : "فاتورة مبيعات مبسطة"}
                   </span>
                   <p className="text-xs font-bold text-slate-600">رقم الفاتورة: <span className="font-bold text-slate-900">{invoice.invoiceNumber}</span></p>
                   <p className="text-[10px] text-slate-400 mt-1">تاريخ الإصدار: {invoice.date}</p>
@@ -1211,14 +1331,23 @@ function InvoicePreviewModal({ invoice, settings, onClose }: { invoice: Invoice,
                       <p className="text-[10.5px] leading-relaxed text-slate-500">{invoice.notes}</p>
                     </div>
                   )}
-                  {/* Simulated Zatca standard QR placeholder to give highly professional local look */}
+                  {/* Simulated standard QR placeholder to give highly professional local look */}
                   <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200/60 max-w-[280px]">
                     <div className="h-14 w-14 bg-white border border-slate-200 rounded flex items-center justify-center p-1 flex-shrink-0">
                       <div className="h-full w-full bg-[repeating-linear-gradient(45deg,#000,#000_1px,transparent_1.5px,transparent_4px)] opacity-85"></div>
                     </div>
                     <div>
-                      <h6 className="text-[9px] font-bold text-slate-500 mb-0.5">الرمز المشفر الموثق (QR)</h6>
-                      <p className="text-[8px] text-slate-400">فاتورة مسجلة للنظام الضريبي السعودي للفوترة المبسطة</p>
+                      {invoice.taxRate > 0 ? (
+                        <>
+                          <h6 className="text-[9px] font-bold text-slate-500 mb-0.5">الرمز المشفر الموثق (QR)</h6>
+                          <p className="text-[8px] text-slate-400">فاتورة مسجلة للنظام الضريبي السعودي للفوترة المبسطة</p>
+                        </>
+                      ) : (
+                        <>
+                          <h6 className="text-[9px] font-bold text-slate-500 mb-0.5">رمز التحقق الموثق (QR)</h6>
+                          <p className="text-[8px] text-slate-400">رمز التحقق الإلكتروني لتأكيد موثوقية المعاملة والطلب</p>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
