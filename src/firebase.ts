@@ -1,6 +1,6 @@
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
 import { getAuth, Auth } from 'firebase/auth';
-import { getFirestore, Firestore } from 'firebase/firestore';
+import { initializeFirestore, Firestore } from 'firebase/firestore';
 import firebaseConfig from '@/firebase-applet-config.json';
 
 let app: FirebaseApp | null = null;
@@ -14,9 +14,11 @@ export async function initFirebase() {
     console.log("Initializing Firebase with config:", firebaseConfig.projectId);
     if (firebaseConfig && firebaseConfig.apiKey) {
       app = initializeApp(firebaseConfig);
-      db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+      db = initializeFirestore(app, {
+        experimentalForceLongPolling: true
+      }, firebaseConfig.firestoreDatabaseId);
       auth = getAuth(app);
-      console.log("Firebase initialized successfully");
+      console.log("Firebase initialized successfully with long polling");
     } else {
       console.warn("Firebase config is missing apiKey");
     }
