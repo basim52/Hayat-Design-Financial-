@@ -415,6 +415,7 @@ function AddEditInvoiceModal({ invoice, user, services, settings, onClose }: { i
   // Logo customization state
   const [logoPreset, setLogoPreset] = useState(invoice?.logoPreset || 'default');
   const [customLogoBase64, setCustomLogoBase64] = useState(invoice?.customLogoBase64 || '');
+  const [templatePreset, setTemplatePreset] = useState<string>(invoice?.templatePreset || 'classic');
 
   // Subtotal and tax items list
   const [items, setItems] = useState<InvoiceItem[]>(invoice?.items || [
@@ -587,6 +588,7 @@ function AddEditInvoiceModal({ invoice, user, services, settings, onClose }: { i
       grandTotal: settings.isTaxRegistered ? (Number(calculatedGrandTotal) || 0) : (Number(calculatedSubtotal) - Number(discount)),
       paymentMethod: paymentMethod,
       primaryProductType: finalProductType,
+      templatePreset: templatePreset,
       updatedAt: serverTimestamp()
     };
 
@@ -892,6 +894,34 @@ function AddEditInvoiceModal({ invoice, user, services, settings, onClose }: { i
             </div>
           )}
 
+          {/* Invoice Template Customization Block */}
+          <div className="bg-blue-50/30 border border-blue-100/50 rounded-2xl p-5 space-y-4">
+            <h4 className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+              قالب وتصميم الفاتورة المحدد
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] font-bold text-slate-500">اختر قالب التصميم الرسومي</label>
+                <select 
+                  value={templatePreset}
+                  onChange={e => setTemplatePreset(e.target.value)}
+                  className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 font-bold focus:border-blue-500 outline-none"
+                >
+                  <option value="classic">الكلاسيكي الرسمي (Classic Ruled)</option>
+                  <option value="modern">الحديث المبسط (Modern Simple)</option>
+                  <option value="compact">قالب الصفحة الواحدة المضغوط (Compact 1-Page - موفر للمساحة)</option>
+                  <option value="luxury">الملكي الفاخر الذهبي (Luxury Gold)</option>
+                </select>
+              </div>
+              <div className="flex flex-col gap-2 justify-center">
+                <p className="text-[10px] text-slate-400 font-medium leading-relaxed">
+                  * اختر قالب <b className="text-blue-600">الصفحة الواحدة المضغوط (Compact)</b> للبنود الكثيرة لضمان احتواء الفاتورة بأكملها في ورقة واحدة A4 دون انقسام أو فراغات زائدة.
+                </p>
+              </div>
+            </div>
+          </div>
+
           {/* Sales Connection Fields (ارتباط المبيعات) */}
           <div className="bg-emerald-50/40 border border-emerald-100/50 rounded-2xl p-5 space-y-4">
             <h4 className="text-xs font-bold text-emerald-800 flex items-center gap-1.5">
@@ -1166,31 +1196,35 @@ function InvoicePreviewModal({ invoice, settings, onClose }: { invoice: Invoice,
   const printRef = useRef<HTMLDivElement>(null);
   const [downloadingImg, setDownloadingImg] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
+  
+  // Choose templates dynamically inside preview
+  const [selectedTemplate, setSelectedTemplate] = useState<string>(invoice.templatePreset || 'classic');
+  const [fitToSinglePage, setFitToSinglePage] = useState<boolean>(true);
 
   // Auto logo preset rendering matching Saudi elegant guidelines
   const renderLogoForInvoice = () => {
     switch (invoice.logoPreset) {
       case 'luxury':
         return (
-          <div className="h-12 w-12 rounded-full border-2 border-amber-400 bg-amber-500/10 flex items-center justify-center text-amber-500">
-            <Sparkles size={24} />
+          <div className="h-11 w-11 rounded-full border-2 border-amber-400 bg-amber-500/10 flex items-center justify-center text-amber-500 flex-shrink-0">
+            <Sparkles size={20} />
           </div>
         );
       case 'coffee':
         return (
-          <div className="h-12 w-12 rounded-full border-2 border-amber-600 bg-amber-600/5 flex items-center justify-center text-amber-700">
-            <ShoppingBag size={22} />
+          <div className="h-11 w-11 rounded-full border-2 border-amber-600 bg-amber-600/5 flex items-center justify-center text-amber-700 flex-shrink-0">
+            <ShoppingBag size={18} />
           </div>
         );
       case 'creative':
         return (
-          <div className="h-12 w-12 rounded-full border-2 border-indigo-400 bg-indigo-50 flex items-center justify-center text-indigo-500">
-            <Sparkles size={22} />
+          <div className="h-11 w-11 rounded-full border-2 border-indigo-400 bg-indigo-50 flex items-center justify-center text-indigo-500 flex-shrink-0">
+            <Sparkles size={18} />
           </div>
         );
       case 'custom':
         if (invoice.customLogoBase64) {
-          return <img src={invoice.customLogoBase64} alt="Brand Logo" className="h-12 w-auto max-w-[150px] object-contain rounded bg-white" />;
+          return <img src={invoice.customLogoBase64} alt="Brand Logo" className="h-10 w-auto max-w-[120px] object-contain rounded bg-white flex-shrink-0" />;
         }
         break;
       case 'none':
@@ -1198,14 +1232,14 @@ function InvoicePreviewModal({ invoice, settings, onClose }: { invoice: Invoice,
       default:
         // Elegant life/plant logo preset representing Hayat brand
         return (
-          <div className="h-12 w-12 rounded-2xl bg-hayat-navy flex items-center justify-center text-white shadow-md">
-            <FileText size={22} />
+          <div className="h-11 w-11 rounded-xl bg-hayat-navy flex items-center justify-center text-white shadow-md flex-shrink-0">
+            <FileText size={20} />
           </div>
         );
     }
     return (
-      <div className="h-12 w-12 rounded-2xl bg-hayat-navy flex items-center justify-center text-white shadow-md">
-        <FileText size={22} />
+      <div className="h-11 w-11 rounded-xl bg-hayat-navy flex items-center justify-center text-white shadow-md flex-shrink-0">
+        <FileText size={20} />
       </div>
     );
   };
@@ -1240,9 +1274,9 @@ function InvoicePreviewModal({ invoice, settings, onClose }: { invoice: Invoice,
       pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
       heightLeft -= pageHeight;
 
-      // Check if there is overflow for next pages
+      // Check if there is overflow for next pages, only if single page target is disabled
       let pageNum = 1;
-      while (heightLeft > 0) {
+      while (heightLeft > 0 && !fitToSinglePage) {
         position = -pageHeight * pageNum;
         pdf.addPage();
         pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
@@ -1334,7 +1368,7 @@ function InvoicePreviewModal({ invoice, settings, onClose }: { invoice: Invoice,
                 }
                 @page {
                   size: A4 portrait;
-                  margin: 1.5cm;
+                  margin: 1cm;
                 }
               }
               body {
@@ -1343,7 +1377,7 @@ function InvoicePreviewModal({ invoice, settings, onClose }: { invoice: Invoice,
               }
             </style>
           </head>
-          <body class="p-4 bg-white select-text">
+          <body class="p-2 bg-white select-text">
             <div class="max-w-[21cm] mx-auto">
               ${printContent}
             </div>
@@ -1427,19 +1461,107 @@ ${itemsText}
     }
   };
 
+  // Determine dynamic variables based on current template of choice
+  const isClassic = selectedTemplate === 'classic';
+  const isModern = selectedTemplate === 'modern';
+  const isCompact = selectedTemplate === 'compact';
+  const isLuxury = selectedTemplate === 'luxury';
+
+  // Choose standard color accents based on current template
+  let primaryColorHex = '#1E293B'; // classic slate
+  if (isModern) {
+    primaryColorHex = '#4F46E5'; // indigo
+  } else if (isCompact) {
+    primaryColorHex = '#0F766E'; // teal
+  } else if (isLuxury) {
+    primaryColorHex = '#B45309'; // amber-gold
+  }
+
+  // Sizing adjusters when "fit to single page" is checked
+  const invoicePadding = fitToSinglePage ? 'p-6 md:p-8' : 'p-10 md:p-12';
+  const headerMb = fitToSinglePage ? 'mb-4' : 'mb-8';
+  const sectionMy = fitToSinglePage ? 'my-3' : 'my-6';
+  const tableMy = fitToSinglePage ? 'my-4' : 'my-8';
+  const tableCellPy = fitToSinglePage ? 'py-1.5 px-3 text-[11px]' : 'py-3 px-4 text-xs';
+  const notesAndTotalsGap = fitToSinglePage ? 'gap-4 pt-3' : 'gap-8 pt-6';
+  const footerMt = fitToSinglePage ? 'mt-6' : 'mt-12';
+
+  // Apply styling accents based on chosen Template
+  let containerStyleClasses = 'bg-white mx-auto select-text text-slate-800 flex flex-col justify-between';
+  let headerBorderClasses = 'border-2 border-slate-300 rounded-xl overflow-hidden';
+  let headerCellLeftClasses = 'p-4 bg-slate-50/50 text-right flex gap-3 items-center border-l-2 border-slate-300';
+  let headerCellRightClasses = 'p-4 bg-slate-50/50 text-right flex flex-col justify-between';
+  let customerBoxClasses = 'grid grid-cols-2 border-2 border-slate-300 rounded-xl overflow-hidden';
+  let tableHeaderTrClasses = 'bg-slate-100 text-[11px] font-black text-slate-700';
+  let tableTrClasses = 'text-slate-850 hover:bg-slate-50/40 transition-colors border border-slate-300';
+  let tableBorderClasses = 'w-full text-right border-collapse border-2 border-slate-300 rounded-xl overflow-hidden';
+  let tableBorderContainer = `overflow-hidden rounded-xl border border-slate-300 ${tableMy}`;
+  let primaryColText = 'text-hayat-navy';
+  let subtotalsTableClasses = 'w-full text-xs font-sans border-collapse border-2 border-slate-300 rounded-xl overflow-hidden';
+  let badgeClasses = 'bg-slate-200 text-slate-800 text-[9px] font-extrabold px-3 py-0.5 rounded-full border border-slate-300/60 font-sans';
+  let qrContainerClasses = 'flex items-center gap-2.5 bg-slate-50 p-2.5 rounded-xl border border-slate-200/60 max-w-[280px]';
+  let footerBorderClass = 'pt-3 border-t border-slate-150 w-full';
+
+  if (isModern) {
+    containerStyleClasses += ' rounded-3xl';
+    headerBorderClasses = 'bg-gradient-to-r from-indigo-50/60 to-slate-50/60 rounded-2xl p-4 flex flex-row justify-between items-center border border-indigo-100/60';
+    headerCellLeftClasses = 'text-right flex gap-3.5 items-center';
+    headerCellRightClasses = 'text-right flex flex-col items-end justify-center';
+    customerBoxClasses = 'grid grid-cols-2 bg-slate-50/80 rounded-2xl p-4 gap-4';
+    tableBorderContainer = `overflow-hidden rounded-2xl border border-slate-150 ${tableMy}`;
+    tableBorderClasses = 'w-full text-right border-collapse';
+    tableHeaderTrClasses = 'bg-indigo-650/10 text-indigo-900 border-b border-indigo-100 text-[11px] font-extrabold';
+    tableTrClasses = 'text-slate-800 border-b border-slate-100 odd:bg-slate-50/20';
+    primaryColText = 'text-indigo-950 font-black';
+    subtotalsTableClasses = 'w-full text-xs font-sans border-collapse';
+    badgeClasses = 'bg-indigo-50 text-indigo-700 text-[9px] font-extrabold px-3 py-1 rounded-full border border-indigo-200';
+    qrContainerClasses = 'flex items-center gap-2.5 bg-indigo-50/20 p-2.5 rounded-xl border border-indigo-100/30 max-w-[280px]';
+    footerBorderClass = 'pt-3 border-t border-indigo-50 w-full';
+  } else if (isCompact) {
+    containerStyleClasses += ' font-sans text-xs';
+    headerBorderClasses = 'bg-teal-50/30 rounded-xl p-3 flex flex-row justify-between items-center border border-teal-100/50';
+    headerCellLeftClasses = 'text-right flex gap-2.5 items-center text-[11px]';
+    headerCellRightClasses = 'text-right flex flex-col items-end justify-center';
+    customerBoxClasses = 'grid grid-cols-2 bg-teal-50/10 rounded-xl p-3.5 border border-teal-100/30 gap-2';
+    tableBorderContainer = `overflow-hidden rounded-xl border border-teal-100 ${tableMy}`;
+    tableBorderClasses = 'w-full text-right border-collapse';
+    tableHeaderTrClasses = 'bg-teal-700 text-white text-[10px] font-bold';
+    tableTrClasses = 'text-slate-850 hover:bg-slate-50/30 border-b border-teal-50';
+    primaryColText = 'text-teal-950';
+    subtotalsTableClasses = 'w-full text-[11px] font-sans border-collapse';
+    badgeClasses = 'bg-teal-50 text-teal-800 text-[8.5px] font-bold px-2.5 py-0.5 rounded border border-teal-200';
+    qrContainerClasses = 'flex items-center gap-2 bg-slate-50 p-2 rounded-lg border border-slate-200 text-[10px] max-w-[270px]';
+    footerBorderClass = 'pt-2.5 border-t border-slate-100 w-full';
+  } else if (isLuxury) {
+    containerStyleClasses += ' font-serif min-h-[29.7cm]';
+    headerBorderClasses = 'border-double border-4 border-amber-300 rounded-xl p-5 bg-gradient-to-b from-amber-50/20 to-stone-50 text-right flex flex-row justify-between items-center';
+    headerCellLeftClasses = 'text-right flex gap-3.5 items-center';
+    headerCellRightClasses = 'text-right flex flex-col items-end justify-center';
+    customerBoxClasses = 'grid grid-cols-2 border border-amber-200 bg-stone-50 rounded-xl p-4 gap-4';
+    tableBorderContainer = `overflow-hidden rounded-xl border border-amber-300 ${tableMy}`;
+    tableBorderClasses = 'w-full text-right border-collapse';
+    tableHeaderTrClasses = 'bg-amber-100/70 text-amber-900 border-b border-amber-300 text-[11px] font-semibold';
+    tableTrClasses = 'text-slate-800 border-b border-amber-100/50 odd:bg-stone-50/30';
+    primaryColText = 'text-amber-950 font-black';
+    subtotalsTableClasses = 'w-full text-xs font-sans border-collapse';
+    badgeClasses = 'bg-amber-50/80 text-amber-800 text-[9px] font-bold px-3 py-1 rounded border border-amber-300/80';
+    qrContainerClasses = 'flex items-center gap-2.5 bg-amber-50 p-2.5 rounded-xl border border-amber-200/50 max-w-[280px]';
+    footerBorderClass = 'pt-3 border-t border-amber-200 w-full';
+  }
+
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <motion.div 
-        initial={{ scale: 0.95, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.95, opacity: 0 }}
-        className="bg-white rounded-[2rem] shadow-2xl border border-slate-100 w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden my-auto"
+         initial={{ scale: 0.95, opacity: 0 }}
+         animate={{ scale: 1, opacity: 1 }}
+         exit={{ scale: 0.95, opacity: 0 }}
+         className="bg-white rounded-[2rem] shadow-2xl border border-slate-100 w-full max-w-5xl max-h-[95vh] flex flex-col overflow-hidden my-auto"
       >
         {/* Navigation actions bar */}
         <div className="px-8 py-4 bg-slate-50 border-b border-slate-150/60 flex flex-wrap justify-between items-center gap-4 flex-shrink-0">
           <div className="flex items-center gap-2">
             <Printer size={16} className="text-slate-500" />
-            <span className="text-xs font-extrabold text-slate-600">عرض وتصدير الفاتورة</span>
+            <span className="text-xs font-extrabold text-slate-600">عرض وتصدير الفاتورة - تفاعلي</span>
           </div>
 
           <div className="flex items-center gap-1.5 flex-wrap">
@@ -1478,7 +1600,7 @@ ${itemsText}
               className="px-3 py-1.5 rounded-lg text-xs font-extrabold bg-emerald-600 text-white hover:bg-emerald-700 transition-colors flex items-center gap-1.5"
             >
               <Share2 size={13} />
-              <span>مشاركة عبر واتساب</span>
+              <span>واتساب ومشاركة</span>
             </button>
             <button 
               onClick={handleCopyClipboard}
@@ -1510,187 +1632,320 @@ ${itemsText}
           </div>
         </div>
 
-        {/* Invoice template container */}
-        <div className="flex-1 overflow-y-auto p-8 scrollbar-thin bg-slate-100/40">
-          <div 
-            ref={printRef}
-            id="invoice-document"
-            className="bg-white mx-auto border border-slate-200 p-12 max-w-[21cm] shadow-sm rounded-2xl select-text text-slate-800 flex flex-col justify-between"
-            style={{ minHeight: '29.7cm' }}
-          >
-            {/* Elegant Header section and content */}
-            <div className="flex-grow">
-              {/* Organized and Ruled Invoice Header Grid */}
-              <div className="grid grid-cols-2 border-2 border-slate-300 rounded-xl mb-8 overflow-hidden">
-                <div className="p-5 bg-slate-50/50 text-right flex gap-4 items-center border-l-2 border-slate-300">
-                  {renderLogoForInvoice()}
-                  <div className="space-y-0.5">
-                    <h2 className="text-base font-black text-hayat-navy leading-snug">{settings.storeName}</h2>
-                    <p className="text-[10px] text-slate-500 font-bold">{settings.address || 'المملكة العربية السعودية'}</p>
-                    {settings.contactPhone && (
-                      <p className="text-[9px] text-slate-500 font-mono mt-0.5">{settings.contactPhone}</p>
-                    )}
-                    {settings.isTaxRegistered && settings.taxNumber && (
-                      <p className="text-[9px] text-slate-500 font-bold">الرقم الضريبي: {settings.taxNumber}</p>
-                    )}
-                  </div>
-                </div>
+        {/* Master Flex container layout: Left control pane, Right instant simulation sheet */}
+        <div className="flex-1 flex flex-col md:flex-row overflow-hidden bg-slate-100/20">
+          
+          {/* Settings sidebar on left */}
+          <div className="w-full md:w-80 bg-white border-b md:border-b-0 md:border-l border-slate-150 p-6 flex flex-col gap-6 flex-shrink-0 overflow-y-auto">
+            <div>
+              <h4 className="text-xs font-black text-slate-700 flex items-center gap-1.5">
+                <Sparkles size={14} className="text-amber-500 animate-pulse" />
+                تغيير مظهر وقالب الفاتورة
+              </h4>
+              <p className="text-[10px] text-slate-400 mt-1">اختر من القوالب المصممة حديثاً لمعاينة وتصدير فاتورة مبيعاتك بشكل فوري</p>
+            </div>
 
-                <div className="p-5 bg-slate-50/50 text-right flex flex-col justify-between">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="bg-slate-200 text-slate-800 text-[10px] font-extrabold px-3 py-1 rounded-full border border-slate-300/60 font-sans">
-                      {invoice.taxRate > 0 ? "فاتورة ضريبية مبسطة" : "فاتورة مبيعات مبسطة"}
-                    </span>
-                    <span className="text-[10px] font-mono font-black text-slate-400">#{invoice.invoiceNumber}</span>
-                  </div>
-                  <div className="text-[11px] text-slate-600 space-y-1">
-                    <p className="flex justify-between font-sans">
-                      <span className="text-slate-400 font-bold">رقم الفاتورة:</span>
-                      <span className="font-mono font-black text-slate-900">{invoice.invoiceNumber}</span>
-                    </p>
-                    <p className="flex justify-between font-sans">
-                      <span className="text-slate-400 font-bold">تاريخ الإصدار:</span>
-                      <span className="font-bold text-slate-800">{invoice.date}</span>
-                    </p>
-                    {invoice.dueDate && (
-                      <p className="flex justify-between font-sans">
-                        <span className="text-slate-400 font-bold">تاريخ الاستحقاق:</span>
-                        <span className="font-bold text-slate-800">{invoice.dueDate}</span>
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Bill-to customers details card in a beautiful ruled double box */}
-              <div className="grid grid-cols-2 border-2 border-slate-300 rounded-xl my-6 overflow-hidden">
-                <div className="p-5 bg-slate-50/30 text-right space-y-1.5 border-l-2 border-slate-300">
-                  <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-wider">العميل العزيز / مستلم الفاتورة:</h4>
-                  <p className="text-sm font-black text-hayat-navy">{invoice.customerName}</p>
-                  {invoice.customerPhone && (
-                    <p className="text-xs text-slate-500 font-mono font-bold">رقم الجوال: {invoice.customerPhone}</p>
-                  )}
-                </div>
-
-                <div className="p-5 bg-slate-50/30 text-right space-y-1.5 text-xs text-slate-600 flex flex-col justify-center">
-                  <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-wider">تفاصيل الدفع والتسوية:</h4>
-                  <p className="flex justify-between">
-                    <span>حالة المعاملة الرقمية:</span>
-                    <span className="text-emerald-700 font-extrabold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 font-sans font-bold">مكتملة ومصدقة</span>
-                  </p>
-                  <p className="flex justify-between">
-                    <span>طريقة تسوية الدفع:</span>
-                    <span className="font-extrabold text-slate-800 font-bold">ثقة وتراضي مالي</span>
-                  </p>
-                </div>
-              </div>
-
-              {/* Items details table - Heavily Ruled & Organized ("مسطرة") */}
-              <div className="my-8 overflow-hidden rounded-xl border-2 border-slate-300">
-                <table className="w-full text-right border-collapse">
-                  <thead>
-                    <tr className="bg-slate-100 text-xs font-black text-slate-700">
-                      <th className="py-2.5 px-3 border border-slate-300 text-center w-12">#</th>
-                      <th className="py-2.5 px-4 border border-slate-300 text-right">اسم المادة / الصنف والوصف البنيوي</th>
-                      <th className="py-2.5 px-3 border border-slate-300 text-center w-24">الكمية</th>
-                      <th className="py-2.5 px-3 border border-slate-300 text-center w-32">سعر المفرد</th>
-                      <th className="py-2.5 px-4 border border-slate-300 text-left w-36">القيمة الكلية</th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-xs">
-                    {invoice.items.map((item, idx) => (
-                      <tr key={item.id} className="text-slate-800 hover:bg-slate-50/40 transition-colors">
-                        <td className="py-3 px-3 border border-slate-300 text-center font-mono font-bold text-slate-400">{idx + 1}</td>
-                        <td className="py-3 px-4 border border-slate-300 font-bold text-slate-900 leading-relaxed">{item.name}</td>
-                        <td className="py-3 px-3 border border-slate-300 text-center font-mono font-bold text-slate-800">{item.quantity}</td>
-                        <td className="py-3 px-3 border border-slate-300 text-center font-serif font-bold text-slate-700">
-                          {(item.price || 0).toLocaleString()} <span className="text-[10px] text-slate-400 font-sans">ريال</span>
-                        </td>
-                        <td className="py-3 px-4 border border-slate-300 text-left font-serif font-black text-slate-950 bg-slate-50/30">
-                          {(item.total || 0).toLocaleString()} <span className="text-[10px] text-slate-500 font-sans">ريال</span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Totals box, Notes and QR code representation */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-6">
-                <div className="flex flex-col justify-end text-right space-y-4">
-                  {invoice.notes && (
-                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
-                      <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">ملاحظات والتزامات:</h5>
-                      <p className="text-[11px] leading-relaxed text-slate-600">{invoice.notes}</p>
+            {/* Template Selector Radio Cards */}
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">القوالب والتصاميم المتاحة:</label>
+              <div className="grid grid-cols-1 gap-2">
+                {[
+                  { id: 'classic', label: 'القالب الرسمي الكلاسيكي', emoji: '🏛️', desc: 'إطار ممتد ومربعات مسطّرة واضحة للتدقيق والمنشآت' },
+                  { id: 'modern', label: 'القالب الحديث الناعم', emoji: '✨', desc: 'مظهر عصري، تظليل خفيف وهوامش دائرية وتصميم ناعم' },
+                  { id: 'compact', label: 'المحترف المضغوط (A4)', emoji: '📄', desc: 'هوّامش وحشو فائق الضغط لحماية الفاتورة من التجزئة لصفحتين' },
+                  { id: 'luxury', label: 'الملكي الفاخر الذهبي', emoji: '👑', desc: 'لمسات ذهبية عريقة وأرقام كلاسيكية وسياق دبل عريض' },
+                ].map((t) => (
+                  <button
+                    key={t.id}
+                    onClick={() => setSelectedTemplate(t.id)}
+                    type="button"
+                    className={`w-full text-right p-3 rounded-2xl border transition-all flex items-start gap-2.5 ${
+                      selectedTemplate === t.id 
+                        ? 'border-indigo-600 bg-indigo-50/40 text-indigo-950 font-extrabold shadow-sm' 
+                        : 'border-slate-200 hover:border-slate-300 bg-white text-slate-700'
+                    }`}
+                  >
+                    <span className="text-base my-0.5">{t.emoji}</span>
+                    <div className="flex flex-col text-right">
+                      <span className="text-xs">{t.label}</span>
+                      <span className="text-[9px] text-slate-400 font-medium leading-normal mt-0.5">{t.desc}</span>
                     </div>
-                  )}
-                  {/* Simulated standard QR placeholder to give highly professional local look */}
-                  <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200/60 max-w-[280px]">
-                    <div className="h-14 w-14 bg-white border border-slate-200 rounded flex items-center justify-center p-1 flex-shrink-0">
-                      <div className="h-full w-full bg-[repeating-linear-gradient(45deg,#000,#000_1px,transparent_1.5px,transparent_4px)] opacity-85"></div>
-                    </div>
-                    <div>
-                      {invoice.taxRate > 0 ? (
-                        <>
-                          <h6 className="text-[9px] font-bold text-slate-500 mb-0.5">الرمز المشفر الموثق (QR)</h6>
-                          <p className="text-[8px] text-slate-400">فاتورة مسجلة للنظام الضريبي السعودي للفوترة المبسطة</p>
-                        </>
-                      ) : (
-                        <>
-                          <h6 className="text-[9px] font-bold text-slate-500 mb-0.5">رمز التحقق الموثق (QR)</h6>
-                          <p className="text-[8px] text-slate-400">رمز التحقق الإلكتروني لتأكيد موثوقية المعاملة والطلب</p>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex justify-end pr-0 md:pr-10">
-                  <div className="w-full max-w-[340px] border-2 border-slate-300 rounded-xl overflow-hidden shadow-sm">
-                    <table className="w-full text-xs font-sans border-collapse">
-                      <tbody>
-                        <tr className="border-b border-slate-300">
-                          <td className="py-2.5 px-4 text-right text-slate-500 font-bold bg-slate-50">المجموع الأساسي الفرعي:</td>
-                          <td className="py-2.5 px-4 text-left font-serif font-bold text-slate-900 bg-slate-50/45 text-right font-bold w-32">
-                            {(invoice.subtotal || 0).toLocaleString()} ريال
-                          </td>
-                        </tr>
-
-                        {invoice.discount > 0 && (
-                          <tr className="border-b border-slate-300">
-                            <td className="py-2.5 px-4 text-right text-emerald-600 font-bold bg-slate-50">الخصم المطبق الفوري:</td>
-                            <td className="py-2.5 px-4 text-left font-serif font-black text-emerald-700 bg-emerald-50/20 text-right font-bold">
-                              -{(invoice.discount || 0).toLocaleString()} ريال
-                            </td>
-                          </tr>
-                        )}
-
-                        {invoice.taxRate > 0 && (
-                          <tr className="border-b border-slate-300">
-                            <td className="py-2.5 px-4 text-right text-slate-500 font-bold bg-slate-50">الضريبة المضافة ({invoice.taxRate}%):</td>
-                            <td className="py-2.5 px-4 text-left font-serif font-bold text-slate-900 bg-slate-50/45 text-right font-bold">
-                              +{(invoice.taxAmount || 0).toLocaleString()} ريال
-                            </td>
-                          </tr>
-                        )}
-
-                        <tr className="bg-slate-100 font-black text-hayat-navy">
-                          <td className="py-3 px-4 text-right text-sm">المجموع الكلي النهائي الصافي:</td>
-                          <td className="py-3 px-4 text-left font-serif text-base font-black text-slate-950 border-double border-b-4 border-slate-950 bg-slate-150/40 text-right">
-                            {(invoice.grandTotal || 0).toLocaleString()} ريال
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
+                  </button>
+                ))}
               </div>
             </div>
 
-            {/* Small Footer sign page decoration in relative block flow */}
-            <div className="mt-12 flex justify-between items-center text-[8px] text-slate-400 font-bold pt-4 border-t border-slate-100 w-full">
-              <p>نظام فوترة "حياة" المالي الذكي</p>
-              <p>توقيع وختم المتجر المعتمد</p>
+            {/* Compact Height Checkbox */}
+            <div className="space-y-2 pt-4 border-t border-slate-100">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">انضغاط الصفحة الواحدة (A4 Fit):</label>
+              
+              <label className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 border border-slate-150 cursor-pointer hover:bg-slate-100/60 transition-colors">
+                <input 
+                  type="checkbox"
+                  checked={fitToSinglePage}
+                  onChange={e => setFitToSinglePage(e.target.checked)}
+                  className="rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4"
+                />
+                <div className="flex flex-col text-right">
+                  <span className="text-xs font-bold text-slate-700">احتواء في صفحة واحدة</span>
+                  <span className="text-[9px] text-slate-400 leading-normal mt-0.5">
+                    يقوم بتقليل تباعد الأسطر وهوامش الجداول وحشو الترويسة لضمان استقرار الفاتورة بالكامل في صفحة واحدة.
+                  </span>
+                </div>
+              </label>
+            </div>
+
+            <div className="mt-auto bg-amber-50/50 border border-amber-200/40 rounded-2xl p-4">
+              <p className="text-[10px] text-amber-800 font-bold leading-relaxed flex items-start gap-1.5">
+                <span className="bullet text-sm leading-none">•</span>
+                <span>
+                  نوصي باختيار <b>"المحترف المضغوط"</b> وتفعيل كرت <b>"احتواء في صفحة واحدة"</b> في حال زادت بنود فواتيركم عن 5 عناصر لضمان عدم حدوث انقسام للـ PDF.
+                </span>
+              </p>
+            </div>
+          </div>
+
+          {/* Scaled Preview Document */}
+          <div className="flex-1 overflow-y-auto p-4 md:p-8 scrollbar-thin bg-slate-100/40 flex justify-center items-start">
+            <div 
+              ref={printRef}
+              id="invoice-document"
+              className={`${containerStyleClasses} ${invoicePadding} border border-slate-200 max-w-[21cm] w-full shadow-md rounded-2xl bg-white`}
+              style={{ minHeight: fitToSinglePage ? 'auto' : '29.7cm' }}
+            >
+              {/* Elegant Header section and content */}
+              <div className="flex-grow">
+                
+                {/* 1. Header block */}
+                {isClassic && (
+                  <div className={`${headerBorderClasses} ${headerMb}`}>
+                    <div className={headerCellLeftClasses}>
+                      {renderLogoForInvoice()}
+                      <div className="space-y-0.5">
+                        <h2 className="text-base font-black text-hayat-navy leading-snug">{settings.storeName}</h2>
+                        <p className="text-[10px] text-slate-500 font-bold">{settings.address || 'المملكة العربية السعودية'}</p>
+                        {settings.contactPhone && (
+                          <p className="text-[9px] text-slate-500 font-mono mt-0.5">{settings.contactPhone}</p>
+                        )}
+                        {settings.isTaxRegistered && settings.taxNumber && (
+                          <p className="text-[9px] text-slate-500 font-bold">الرقم الضريبي: {settings.taxNumber}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className={headerCellRightClasses}>
+                      <div className="flex justify-between items-center mb-2">
+                        <span className={badgeClasses}>
+                          {invoice.taxRate > 0 ? "فاتورة ضريبية مبسطة" : "فاتورة مبيعات مبسطة"}
+                        </span>
+                        <span className="text-[10px] font-mono font-black text-slate-400">#{invoice.invoiceNumber}</span>
+                      </div>
+                      <div className="text-[11px] text-slate-600 space-y-0.5">
+                        <p className="flex justify-between font-sans gap-4">
+                          <span className="text-slate-400 font-bold flex-shrink-0">رقم الفاتورة:</span>
+                          <span className="font-mono font-black text-slate-900">{invoice.invoiceNumber}</span>
+                        </p>
+                        <p className="flex justify-between font-sans gap-4">
+                          <span className="text-slate-400 font-bold flex-shrink-0">تاريخ الإصدار:</span>
+                          <span className="font-bold text-slate-800">{invoice.date}</span>
+                        </p>
+                        {invoice.dueDate && (
+                          <p className="flex justify-between font-sans gap-4">
+                            <span className="text-slate-400 font-bold flex-shrink-0">تاريخ الاستحقاق:</span>
+                            <span className="font-bold text-slate-800">{invoice.dueDate}</span>
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {(isModern || isCompact || isLuxury) && (
+                  <div className={`${headerBorderClasses} ${headerMb}`}>
+                    <div className={headerCellLeftClasses}>
+                      {renderLogoForInvoice()}
+                      <div className="space-y-0.5 text-right">
+                        <div className="flex items-center gap-2">
+                          <h2 className="text-base font-black text-slate-900 leading-none">{settings.storeName}</h2>
+                          <span className={badgeClasses}>
+                            {invoice.taxRate > 0 ? "فاتورة ضريبية مبسطة" : "فاتورة مبيعات مبسطة"}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-slate-400 font-bold leading-normal">{settings.address || 'المملكة العربية السعودية'}</p>
+                        <div className="flex items-center gap-3 text-[9px] text-slate-400 font-mono">
+                          {settings.contactPhone && <span>الجوال: {settings.contactPhone}</span>}
+                          {settings.isTaxRegistered && settings.taxNumber && (
+                            <span className="font-sans font-bold">الرقم الضريبي: {settings.taxNumber}</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className={headerCellRightClasses}>
+                      <span className="text-[13px] font-mono font-black text-indigo-650" style={{ color: primaryColorHex }}>
+                        #{invoice.invoiceNumber}
+                      </span>
+                      <div className="text-[9.5px] text-slate-500 space-y-0.5 mt-1 font-sans">
+                        <p className="flex justify-end gap-2">
+                          <span className="text-slate-400">تاريخ الفاتورة:</span>
+                          <span className="font-bold text-slate-800">{invoice.date}</span>
+                        </p>
+                        {invoice.dueDate && (
+                          <p className="flex justify-end gap-2">
+                            <span className="text-slate-400">تاريخ الاستحقاق:</span>
+                            <span className="font-bold text-slate-800">{invoice.dueDate}</span>
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 2. Customer billing information details */}
+                {isCompact ? (
+                  <div className={`${customerBoxClasses} ${sectionMy}`}>
+                    <div className="text-right">
+                      <span className="text-[8.5px] font-black text-teal-800 uppercase tracking-wider block mb-0.5">العميل الموقّر:</span>
+                      <p className="text-xs font-black text-slate-800">{invoice.customerName}</p>
+                      {invoice.customerPhone && (
+                        <p className="text-[10px] text-slate-500 font-mono leading-tight">الجوال: {invoice.customerPhone}</p>
+                      )}
+                    </div>
+                    <div className="text-left flex flex-col justify-center items-end text-[10px] text-slate-500">
+                      <p className="text-right"><span className="text-[8.5px] text-slate-400 font-bold block">تسوية الحساب:</span> مكتملة وموثقة ماليًا</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className={`${customerBoxClasses} ${sectionMy}`}>
+                    <div className={`p-4 md:p-5 text-right space-y-1 block ${isClassic ? 'border-l-2 border-slate-300' : ''}`}>
+                      <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-wider">العميل العزيز / مستلم الفاتورة:</h4>
+                      <p className={`text-sm font-black ${primaryColText}`}>{invoice.customerName}</p>
+                      {invoice.customerPhone && (
+                        <p className="text-xs text-slate-500 font-mono font-bold">رقم الجوال: {invoice.customerPhone}</p>
+                      )}
+                    </div>
+
+                    <div className="p-4 md:p-5 text-right space-y-1 text-xs text-slate-600 flex flex-col justify-center">
+                      <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-wider">تفاصيل الدفع والتسوية:</h4>
+                      <p className="flex justify-between">
+                        <span>حالة المعاملة الرقمية:</span>
+                        <span className="text-emerald-700 font-extrabold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 font-sans font-bold text-[10px]">مكتملة ومصدقة</span>
+                      </p>
+                      <p className="flex justify-between">
+                        <span>طريقة تسوية الدفع:</span>
+                        <span className="font-extrabold text-slate-850 font-bold">مستند مالي معتمد</span>
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* 3. Items details table */}
+                <div className={tableBorderContainer}>
+                  <table className={tableBorderClasses}>
+                    <thead>
+                      <tr className={tableHeaderTrClasses}>
+                        <th className="py-2 px-2 text-center w-10 border-b border-l border-slate-200">#</th>
+                        <th className="py-2 px-3 text-right border-b border-l border-slate-200">اسم المادة / الصنف والوصف البنيوي</th>
+                        <th className="py-2 px-2 text-center w-16 border-b border-l border-slate-200">الكمية</th>
+                        <th className="py-2 px-2 text-center w-24 border-b border-l border-slate-200">سعر المفرد</th>
+                        <th className="py-2 px-3 text-left w-28 border-b border-slate-200">القيمة الكلية</th>
+                      </tr>
+                    </thead>
+                    <tbody className="text-[11.5px]">
+                      {invoice.items.map((item, idx) => (
+                        <tr key={item.id} className={tableTrClasses}>
+                          <td className="py-2 px-2 text-center font-mono font-bold text-slate-400 border-l border-slate-200/50">{idx + 1}</td>
+                          <td className="py-2 px-3 font-bold text-slate-900 border-l border-slate-200/50">{item.name}</td>
+                          <td className="py-2 px-2 text-center font-mono font-bold text-slate-800 border-l border-slate-200/50">{item.quantity}</td>
+                          <td className="py-2 px-2 text-center font-semibold text-slate-700 border-l border-slate-200/50">
+                            {(item.price || 0).toLocaleString()} <span className="text-[9px] text-slate-400 font-sans">ريـال</span>
+                          </td>
+                          <td className="py-2 px-3 text-left font-black text-slate-950 bg-slate-50/20">
+                            {(item.total || 0).toLocaleString()} <span className="text-[9.5px] text-slate-500 font-sans">ريـال</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* 4. Totals box, Notes and QR code representation */}
+                <div className={`grid grid-cols-1 md:grid-cols-2 ${notesAndTotalsGap}`}>
+                  <div className="flex flex-col justify-end text-right space-y-3">
+                    {invoice.notes && (
+                      <div className="p-3 bg-slate-50/80 rounded-xl border border-slate-200 text-right">
+                        <h5 className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">ملاحظات والتزامات:</h5>
+                        <p className="text-[10px] leading-relaxed text-slate-600">{invoice.notes}</p>
+                      </div>
+                    )}
+                    {/* Simulated standard QR placeholder to give highly professional local look */}
+                    <div className={qrContainerClasses}>
+                      <div className="h-12 w-12 bg-white border border-slate-200 rounded flex items-center justify-center p-1 flex-shrink-0">
+                        <div className="h-full w-full bg-[repeating-linear-gradient(45deg,#000,#000_1px,transparent_1.5px,transparent_4px)] opacity-85"></div>
+                      </div>
+                      <div>
+                        {invoice.taxRate > 0 ? (
+                          <>
+                            <h6 className="text-[9.5px] font-bold text-slate-600 mb-0.5">الرمز المشفر الموثق (QR)</h6>
+                            <p className="text-[8px] text-slate-400 font-sans">فاتورة مسجلة للنظام الضريبي السعودي للفوترة المبسطة</p>
+                          </>
+                        ) : (
+                          <>
+                            <h6 className="text-[9.5px] font-bold text-slate-600 mb-0.5">رمز التحقق المعتمد (QR)</h6>
+                            <p className="text-[8px] text-slate-400 font-sans">رمز مالي إلكتروني ثنائي الأبعاد لمطابقة صفقات المتجر</p>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end">
+                    <div className="w-full max-w-[340px] border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                      <table className={subtotalsTableClasses}>
+                        <tbody>
+                          <tr className="border-b border-slate-200">
+                            <td className="py-2 px-3 text-right text-slate-500 font-bold bg-slate-50/50">المجموع الأساسي الفرعي:</td>
+                            <td className="py-2 px-3 text-left font-semibold text-slate-900 text-right bg-slate-50/20 w-28">
+                              {(invoice.subtotal || 0).toLocaleString()} ريال
+                            </td>
+                          </tr>
+
+                          {invoice.discount > 0 && (
+                            <tr className="border-b border-slate-200">
+                              <td className="py-2 px-3 text-right text-emerald-600 font-bold bg-slate-50/50">الخصم المطبق الفوري:</td>
+                              <td className="py-2 px-3 text-left font-black text-emerald-700 text-right bg-emerald-50/10">
+                                -{(invoice.discount || 0).toLocaleString()} ريال
+                              </td>
+                            </tr>
+                          )}
+
+                          {invoice.taxRate > 0 && (
+                            <tr className="border-b border-slate-200">
+                              <td className="py-2 px-3 text-right text-slate-500 font-bold bg-slate-50/50">الضريبة المضافة ({invoice.taxRate}%):</td>
+                              <td className="py-2 px-3 text-left font-semibold text-slate-900 text-right bg-slate-50/20">
+                                +{(invoice.taxAmount || 0).toLocaleString()} ريال
+                              </td>
+                            </tr>
+                          )}
+
+                          <tr className="bg-slate-100/80 font-black text-slate-900 border-t border-slate-300">
+                            <td className="py-2 px-3 text-right text-xs">المجموع الكلي النهائي الصافي:</td>
+                            <td className="py-2 px-3 text-left text-sm font-black text-slate-950 text-right" style={{ color: primaryColorHex }}>
+                              {(invoice.grandTotal || 0).toLocaleString()} ريال
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Small Footer sign page decoration in relative block flow */}
+              <div className={`${footerMt} flex justify-between items-center text-[8.5px] text-slate-400 font-bold ${footerBorderClass}`}>
+                <p>صنع في نظام فوترة "حياة" المالي الذكي</p>
+                <p>توقيع وختم المتجر المعتمد</p>
+              </div>
             </div>
           </div>
         </div>

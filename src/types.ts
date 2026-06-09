@@ -80,4 +80,5 @@ export interface Invoice {
   revenueId?: string;
   paymentMethod?: string;
   primaryProductType?: string;
+  templatePreset?: string; // e.g. "classic" | "modern" | "compact" | "luxury"
 }
