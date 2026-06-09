@@ -210,6 +210,8 @@ const generateCashFlowTrend = (revenues: any[], expenses: any[]) => {
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const [services, setServices] = useState<{ db: any, auth: any }>({ db: initialDb, auth: initialAuth });
   const [activeTab, setActiveTab] = useState<'dashboard' | 'expenses' | 'revenues' | 'budget' | 'waste' | 'reports' | 'settings' | 'invoices'>('dashboard');
   const [showMoreMenu, setShowMoreMenu] = useState(false);
@@ -246,6 +248,91 @@ export default function App() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const dashboardRef = useRef<HTMLDivElement>(null);
 
+  const loadLocalData = () => {
+    const rawBudgets = localStorage.getItem('local_budgets');
+    const rawExpenses = localStorage.getItem('local_expenses');
+    const rawRevenues = localStorage.getItem('local_revenues');
+    const rawWastes = localStorage.getItem('local_wastes');
+    const rawInvoices = localStorage.getItem('local_invoices');
+
+    if (!rawBudgets && !rawExpenses && !rawRevenues) {
+      // Seed default demo data locally
+      const now = new Date();
+      const monthStr = format(now, 'yyyy-MM');
+      const isoDate = now.toISOString();
+
+      const defaultRevenues = [
+        { id: 'rev-1', productType: 'acrylic' as any, amount: 4500, orderNumber: '1001', date: isoDate, description: 'مشروع لوحات أكريليك لمكتب هندسي', paymentMethod: 'bank_transfer', userId: 'guest-development-user-id', createdAt: { seconds: Date.now() / 1000, nanoseconds: 0 } as any },
+        { id: 'rev-2', productType: 'wood' as any, amount: 3200, orderNumber: '1002', date: isoDate, description: 'صواني خطوبة خشبية مخصصة للعميل', paymentMethod: 'mada', userId: 'guest-development-user-id', createdAt: { seconds: Date.now() / 1000, nanoseconds: 0 } as any },
+        { id: 'rev-3', productType: 'svg' as any, amount: 850, orderNumber: '1003', date: isoDate, description: 'تصميم هوية بصرية متكاملة', paymentMethod: 'apple_pay', userId: 'guest-development-user-id', createdAt: { seconds: Date.now() / 1000, nanoseconds: 0 } as any }
+      ];
+
+      const defaultExpenses = [
+        { id: 'exp-1', category: 'materials' as any, amount: 1200, date: isoDate, description: 'شراء ألواح خشب ومواد خام', userId: 'guest-development-user-id', createdAt: { seconds: Date.now() / 1000, nanoseconds: 0 } as any },
+        { id: 'exp-2', category: 'marketing' as any, amount: 450, date: isoDate, description: 'إعلانات ممولة تيك توك وسناب', userId: 'guest-development-user-id', createdAt: { seconds: Date.now() / 1000, nanoseconds: 0 } as any },
+        { id: 'exp-3', category: 'wages' as any, amount: 1500, date: isoDate, description: 'أجور عمال الصنفرة والتجميع', userId: 'guest-development-user-id', createdAt: { seconds: Date.now() / 1000, nanoseconds: 0 } as any }
+      ];
+
+      const defaultBudgets = [
+        { id: 'bud-1', category: 'materials' as any, amount: 5000, month: monthStr, userId: 'guest-development-user-id', createdAt: { seconds: Date.now() / 1000, nanoseconds: 0 } as any },
+        { id: 'bud-2', category: 'marketing' as any, amount: 1500, month: monthStr, userId: 'guest-development-user-id', createdAt: { seconds: Date.now() / 1000, nanoseconds: 0 } as any },
+        { id: 'bud-3', category: 'wages' as any, amount: 4000, month: monthStr, userId: 'guest-development-user-id', createdAt: { seconds: Date.now() / 1000, nanoseconds: 0 } as any }
+      ];
+
+      const defaultInvoices = [
+        {
+          id: 'local-inv-1',
+          invoiceNumber: 'INV-2026-001',
+          customerName: 'شركة السديم للفندقة',
+          customerPhone: '0500000000',
+          date: format(now, 'yyyy-MM-dd'),
+          dueDate: format(new Date(now.getTime() + 15 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'),
+          notes: 'يرجى سداد المبلغ المتبقي خلال ١٥ يوماً من تاريخ التوريد.',
+          logoPreset: 'preset1',
+          items: [
+            { id: 'item-1', name: 'طاولة استقبال أكريليك فاخرة مع طباعة شعار المتجر بالذهب', quantity: 1, price: 3500, total: 3500 },
+            { id: 'item-2', name: 'ستاند لوحات طاولات خشب طبيعي مع إطار زجاجي', quantity: 10, price: 100, total: 1000 }
+          ],
+          subtotal: 4500,
+          taxRate: 0,
+          taxAmount: 0,
+          discount: 250,
+          grandTotal: 4250,
+          userId: 'guest-development-user-id',
+          createdAt: { seconds: Date.now() / 1000, nanoseconds: 0 } as any
+        }
+      ];
+
+      localStorage.setItem('local_budgets', JSON.stringify(defaultBudgets));
+      localStorage.setItem('local_expenses', JSON.stringify(defaultExpenses));
+      localStorage.setItem('local_revenues', JSON.stringify(defaultRevenues));
+      localStorage.setItem('local_wastes', JSON.stringify([]));
+      localStorage.setItem('local_invoices', JSON.stringify(defaultInvoices));
+
+      setBudgets(defaultBudgets);
+      setExpenses(defaultExpenses);
+      setRevenues(defaultRevenues);
+      setWaste([]);
+      setInvoices(defaultInvoices);
+    } else {
+      setBudgets(JSON.parse(rawBudgets || '[]'));
+      setExpenses(JSON.parse(rawExpenses || '[]'));
+      setRevenues(JSON.parse(rawRevenues || '[]'));
+      setWaste(JSON.parse(rawWastes || '[]'));
+      setInvoices(JSON.parse(rawInvoices || '[]'));
+    }
+  };
+
+  useEffect(() => {
+    if ((user as any)?.isLocalGuest) {
+      loadLocalData();
+      window.addEventListener('localDataChanged', loadLocalData);
+      return () => {
+        window.removeEventListener('localDataChanged', loadLocalData);
+      };
+    }
+  }, [user]);
+
   // Init Firebase
   useEffect(() => {
     async function setup() {
@@ -254,7 +341,14 @@ export default function App() {
       
       if (newAuth) {
         onAuthStateChanged(newAuth, (u) => {
-          setUser(u);
+          if (u) {
+            setUser(u);
+          } else {
+            setUser(current => {
+              if (current && (current as any).isLocalGuest) return current;
+              return null;
+            });
+          }
           setLoading(false);
         });
       } else {
@@ -266,7 +360,7 @@ export default function App() {
 
   // Data Fetching
   useEffect(() => {
-    if (!user || !services.db) return;
+    if (!user || (user as any).isLocalGuest || !services.db) return;
 
     // Listen to plural collections (standard)
     const unsubBudgets = onSnapshot(collection(services.db, 'budgets'), (snap) => {
@@ -299,7 +393,7 @@ export default function App() {
   }, [user, services.db]);
 
   const handleSeedData = async () => {
-    if (!user || !services.db) return;
+    if (!user) return;
     if (!window.confirm('هل تريد استعادة البيانات التجريبية؟ سيتم إضافة سجلات جديدة لمساعدتك في تجربة لوحة التحكم.')) return;
 
     try {
@@ -324,6 +418,30 @@ export default function App() {
         { category: 'wages', amount: 3000, month: monthStr }
       ];
 
+      if ((user as any)?.isLocalGuest) {
+        const localRevenues = JSON.parse(localStorage.getItem('local_revenues') || '[]');
+        const localExpenses = JSON.parse(localStorage.getItem('local_expenses') || '[]');
+        const localBudgets = JSON.parse(localStorage.getItem('local_budgets') || '[]');
+
+        sampleRevenues.forEach((r, idx) => {
+          localRevenues.push({ id: `seed-rev-${Date.now()}-${idx}`, ...r, userId: user.uid });
+        });
+        sampleExpenses.forEach((e, idx) => {
+          localExpenses.push({ id: `seed-exp-${Date.now()}-${idx}`, ...e, userId: user.uid });
+        });
+        sampleBudgets.forEach((b, idx) => {
+          localBudgets.push({ id: `seed-bud-${Date.now()}-${idx}`, ...b, userId: user.uid });
+        });
+
+        localStorage.setItem('local_revenues', JSON.stringify(localRevenues));
+        localStorage.setItem('local_expenses', JSON.stringify(localExpenses));
+        localStorage.setItem('local_budgets', JSON.stringify(localBudgets));
+        window.dispatchEvent(new Event('localDataChanged'));
+
+        alert('تمت استعادة البيانات بنجاح في ذاكرة المتصفح المحلية');
+        return;
+      }
+
       for (const r of sampleRevenues) await addDoc(collection(services.db, 'revenues'), { ...r, userId: user.uid, createdAt: serverTimestamp() });
       for (const e of sampleExpenses) await addDoc(collection(services.db, 'expenses'), { ...e, userId: user.uid, createdAt: serverTimestamp() });
       for (const b of sampleBudgets) await addDoc(collection(services.db, 'budgets'), { ...b, userId: user.uid, createdAt: serverTimestamp() });
@@ -335,11 +453,49 @@ export default function App() {
     }
   };
 
-  const handleLogin = () => services.auth && signInWithPopup(services.auth, new GoogleAuthProvider());
+  const handleLogin = async () => {
+    if (!services.auth) return;
+    try {
+      setLoginError(null);
+      await signInWithPopup(services.auth, new GoogleAuthProvider());
+    } catch (err: any) {
+      console.error("Firebase Login Error:", err);
+      const code = err?.code || '';
+      const message = err?.message || String(err);
+      if (code === 'auth/unauthorized-domain' || message.includes('auth/unauthorized-domain')) {
+        setLoginError('unauthorized-domain');
+      } else {
+        setLoginError(message);
+      }
+    }
+  };
+
   const handleLogout = () => {
     if (window.confirm('هل تريد تسجيل الخروج؟')) {
-       services.auth && signOut(services.auth);
+      if ((user as any)?.isLocalGuest) {
+        setUser(null);
+        return;
+      }
+      services.auth && signOut(services.auth);
     }
+  };
+
+  const handleGuestLogin = () => {
+    setUser({
+      uid: 'guest-development-user-id',
+      displayName: 'مُصمم زائر (بيئة تجريبية)',
+      email: 'guest@hayat-design.com',
+      photoURL: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100',
+    } as any);
+    // Add custom helper tag
+    setTimeout(() => {
+      setUser(current => {
+        if (current) {
+          return { ...current, isLocalGuest: true };
+        }
+        return null;
+      });
+    }, 10);
   };
 
   if (loading) return <div className="flex items-center justify-center h-screen bg-hayat-cream font-sans">Loading...</div>;
@@ -367,37 +523,83 @@ export default function App() {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
-          className="max-w-md w-full bg-white p-12 md:p-16 rounded-[3rem] shadow-hayat-lg border border-hayat-border/40 relative z-10"
+          className="max-w-md w-full bg-white p-10 rounded-[3rem] shadow-hayat-lg border border-hayat-border/40 relative z-10"
         >
-          <div className="flex flex-col items-center mb-10">
+          <div className="flex flex-col items-center mb-8">
             <motion.div
               initial={{ rotate: -10, opacity: 0 }}
               animate={{ rotate: 0, opacity: 1 }}
               transition={{ delay: 0.3 }}
             >
-              <Logo className="w-24 h-24 mb-6 drop-shadow-sm" />
+              <Logo className="w-20 h-20 mb-5 drop-shadow-sm" />
             </motion.div>
-            <h1 className="font-serif text-5xl text-hayat-navy mb-3 tracking-tight">حياة ديزاين</h1>
+            <h1 className="font-serif text-4xl text-hayat-navy mb-2 tracking-tight">حياة ديزاين</h1>
             <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">Operational Dashboard</p>
           </div>
           
-          <div className="space-y-6">
-            <p className="text-slate-500 text-sm leading-relaxed text-center px-4">
+          <div className="space-y-5">
+            <p className="text-slate-500 text-xs leading-relaxed text-center px-4">
               نظام الإدارة المالية الذكي لتتبع التدفقات النقدية، الميزانية، وتحليل كفاءة الإنتاج.
             </p>
+
+            {loginError && (
+              <div className="p-5 rounded-2xl bg-orange-50 border border-orange-250 text-right space-y-3 relative z-20">
+                <div className="flex items-center gap-2 text-orange-900 font-bold text-xs">
+                  <AlertTriangle size={16} className="text-orange-600 flex-shrink-0" />
+                  <span>عذراً، النطاق غير مصرح له في مشروعك</span>
+                </div>
+                <p className="text-[11px] text-stone-600 leading-relaxed">
+                  مشروع Firebase يرفض تسجيل الدخول بسبب تشغيل التطبيق في بيئة تطوير AI Studio المؤقتة. لمعالجة ذلك بسهولة:
+                </p>
+                
+                <div className="text-[10px] bg-white/80 p-2.5 rounded-xl border border-orange-100 flex items-center justify-between gap-2.5">
+                  <button 
+                    onClick={() => {
+                      navigator.clipboard.writeText(window.location.hostname);
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    }}
+                    className="px-2.5 py-1.5 bg-orange-100 hover:bg-orange-200 text-orange-850 rounded-lg text-[9px] font-bold active:scale-95 transition-all flex-shrink-0"
+                  >
+                    {copied ? '✔ تم نسخ النطاق' : 'نسخ النطاق الحالي'}
+                  </button>
+                  <span className="font-mono text-stone-600 font-bold select-all overflow-hidden text-ellipsis whitespace-nowrap text-left block flex-grow" dir="ltr">
+                    {window.location.hostname}
+                  </span>
+                </div>
+                
+                <ol className="list-decimal list-inside text-[10px] text-stone-500 space-y-1.5 pr-2">
+                  <li>اذهب إلى تطبيق <span className="font-bold">Firebase Console</span>.</li>
+                  <li>انتقل إلى <span className="font-bold">Authentication</span> ثم <span className="font-bold">Settings</span>.</li>
+                  <li>تحت <span className="font-bold">Authorized Domains</span>، قم بإضافة هذا النطاق المنسوخ.</li>
+                </ol>
+
+                <div className="w-full h-px bg-orange-200/50 my-2"></div>
+                <p className="text-[10px] text-orange-800 font-semibold text-center italic">
+                  * أو يمكنك الضغط أدناه للدخول للوحة دون اتصال والاستكشاف الفوري!
+                </p>
+              </div>
+            )}
             
             <button 
               onClick={handleLogin}
-              className="w-full bg-hayat-navy text-white py-5 rounded-[1.25rem] flex items-center justify-center gap-4 hover:bg-slate-800 transition-all font-bold text-xs uppercase tracking-widest shadow-hayat active:scale-[0.98]"
+              className="w-full bg-hayat-navy text-white py-4.5 rounded-[1.25rem] flex items-center justify-center gap-4 hover:bg-slate-800 transition-all font-bold text-xs uppercase tracking-widest shadow-hayat active:scale-[0.98]"
             >
               <div className="bg-white/10 p-1.5 rounded-lg">
                 <UserIcon size={18} />
               </div>
-              الدخول لـ لوحة التحكم
+              الدخول باستخدام حساب Google
+            </button>
+
+            <button 
+              onClick={handleGuestLogin}
+              className="w-full bg-stone-100 hover:bg-stone-200 text-hayat-navy py-4 rounded-[1.25rem] flex items-center justify-center gap-3 transition-colors font-bold text-xs border border-stone-200/50 active:scale-[0.98]"
+            >
+              🚀 تجربة لوحة التحكم والمحاكاة المحلية السريعة
             </button>
             
-            <div className="pt-8 border-t border-hayat-border/40 flex flex-col items-center">
-               <p className="text-[9px] text-slate-300 font-bold uppercase tracking-widest mb-4">Enterprise Edition 2024</p>
+            <div className="pt-6 border-t border-hayat-border/40 flex flex-col items-center">
+               <p className="text-[9px] text-slate-300 font-bold uppercase tracking-widest mb-3">Enterprise Edition 2024</p>
                <div className="flex gap-4">
                   <div className="w-1.5 h-1.5 rounded-full bg-hayat-wood/40"></div>
                   <div className="w-1.5 h-1.5 rounded-full bg-hayat-navy/40"></div>
@@ -1821,6 +2023,18 @@ function DataListSection({ title, type, items, user, services, settings }: { tit
   const handleDelete = async (id: string) => {
     if (!window.confirm('هل أنت متأكد من مسح هذا السجل؟')) return;
     try {
+      if ((user as any)?.isLocalGuest) {
+        const collectionName = `${type}s`;
+        const localKey = `local_${collectionName}`;
+        let existing: any[] = [];
+        try {
+          existing = JSON.parse(localStorage.getItem(localKey) || '[]');
+        } catch (e) {}
+        const filtered = existing.filter((item: any) => item.id !== id);
+        localStorage.setItem(localKey, JSON.stringify(filtered));
+        window.dispatchEvent(new Event('localDataChanged'));
+        return;
+      }
       await deleteDoc(doc(services.db, `${type}s`, id));
     } catch (e) {
       console.error(e);
@@ -2133,6 +2347,21 @@ function RecordForm({ type, user, services, settings, onComplete }: { type: any,
         payload.estimatedCost = Number(formData.estimatedCost);
         payload.reason = formData.reason;
         payload.date = new Date(formData.date).toISOString();
+      }
+
+      if ((user as any)?.isLocalGuest) {
+        const id = `local-${type}-${Date.now()}-${Math.random()}`;
+        const newRecord = { id, ...payload, createdAt: new Date().toISOString() };
+        
+        let existing: any[] = [];
+        try {
+          existing = JSON.parse(localStorage.getItem(`local_${collectionName}`) || '[]');
+        } catch (e) {}
+        existing.push(newRecord);
+        localStorage.setItem(`local_${collectionName}`, JSON.stringify(existing));
+        window.dispatchEvent(new Event('localDataChanged'));
+        onComplete();
+        return;
       }
 
       await addDoc(collection(services.db, collectionName), payload);

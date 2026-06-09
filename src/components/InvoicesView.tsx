@@ -96,6 +96,13 @@ export default function InvoicesView({ invoices, user, services, settings }: Inv
   const handleDelete = async (id: string) => {
     if (!window.confirm('هل أنت متأكد من رغبتك في حذف هذه الفاتورة نهائياً؟')) return;
     try {
+      if (user?.isLocalGuest) {
+        const localInvoices = JSON.parse(localStorage.getItem('local_invoices') || '[]');
+        const filtered = localInvoices.filter((i: any) => i.id !== id);
+        localStorage.setItem('local_invoices', JSON.stringify(filtered));
+        window.dispatchEvent(new Event('localDataChanged'));
+        return;
+      }
       await deleteDoc(doc(services.db, 'invoices', id));
     } catch (err) {
       console.error('Error deleting invoice: ', err);
@@ -480,6 +487,30 @@ function AddEditInvoiceModal({ invoice, user, services, settings, onClose }: { i
     }
 
     try {
+      if (user?.isLocalGuest) {
+        const localInvoices = JSON.parse(localStorage.getItem('local_invoices') || '[]');
+        const localPayload = { ...payload };
+        localPayload.updatedAt = { seconds: Date.now() / 1000, nanoseconds: 0 };
+        
+        if (isEdit && invoice) {
+          const index = localInvoices.findIndex((i: any) => i.id === invoice.id);
+          if (index !== -1) {
+            localInvoices[index] = { ...localInvoices[index], ...localPayload };
+          }
+          localStorage.setItem('local_invoices', JSON.stringify(localInvoices));
+          alert('تم تعديل الفاتورة وحفظ التغييرات بنجاح!');
+        } else {
+          localPayload.id = `local-invoice-${Date.now()}-${Math.random()}`;
+          localPayload.createdAt = { seconds: Date.now() / 1000, nanoseconds: 0 };
+          localInvoices.push(localPayload);
+          localStorage.setItem('local_invoices', JSON.stringify(localInvoices));
+          alert('تم إنشاء الفاتورة وحفظها بنجاح!');
+        }
+        window.dispatchEvent(new Event('localDataChanged'));
+        onClose();
+        return;
+      }
+
       if (isEdit && invoice) {
         await updateDoc(doc(services.db, 'invoices', invoice.id), payload);
         alert('تم تعديل الفاتورة وحفظ التغييرات بنجاح!');
