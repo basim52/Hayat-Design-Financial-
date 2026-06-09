@@ -319,7 +319,15 @@ export default function App() {
       setExpenses(JSON.parse(rawExpenses || '[]'));
       setRevenues(JSON.parse(rawRevenues || '[]'));
       setWaste(JSON.parse(rawWastes || '[]'));
-      setInvoices(JSON.parse(rawInvoices || '[]'));
+      
+      const parsedInvoices = JSON.parse(rawInvoices || '[]') as Invoice[];
+      const strippedInvoices = parsedInvoices.map(inv => ({
+        ...inv,
+        taxRate: 0,
+        taxAmount: 0,
+        grandTotal: Math.max(0, (inv.subtotal || 0) - (inv.discount || 0))
+      }));
+      setInvoices(strippedInvoices);
     }
   };
 
@@ -380,7 +388,14 @@ export default function App() {
     }, (err) => console.error("Wastes listener error:", err));
 
     const unsubInvoices = onSnapshot(collection(services.db, 'invoices'), (snap) => {
-      setInvoices(snap.docs.map(d => ({ id: d.id, ...d.data() } as Invoice)));
+      const parsedInvoices = snap.docs.map(d => ({ id: d.id, ...d.data() } as Invoice));
+      const strippedInvoices = parsedInvoices.map(inv => ({
+        ...inv,
+        taxRate: 0,
+        taxAmount: 0,
+        grandTotal: Math.max(0, (inv.subtotal || 0) - (inv.discount || 0))
+      }));
+      setInvoices(strippedInvoices);
     }, (err) => console.error("Invoices listener error:", err));
 
     return () => {
