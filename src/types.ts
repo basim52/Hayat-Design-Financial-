@@ -38,6 +38,7 @@ export interface Revenue {
   createdAt: any;
   paymentMethod?: string;
   taxAmount?: number;
+  invoiceId?: string; // LINKED INVOICE ID
 }
 
 export interface WasteItem {
@@ -76,4 +77,7 @@ export interface Invoice {
   logoPreset?: string; // e.g. "default", "luxury", "coffee", "creative", "none"
   customLogoBase64?: string; // Base64 uploaded logo for high fidelity image/PDF print
   createdAt: any;
+  revenueId?: string;
+  paymentMethod?: string;
+  primaryProductType?: string;
 }

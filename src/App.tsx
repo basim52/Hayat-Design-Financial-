@@ -89,39 +89,55 @@ import InvoicesView from './components/InvoicesView';
 
 // Fix html2canvas unsupported oklch/oklab color parsing in modern browsers
 const cleanOklColorsAndPatchGetComputedStyle = (clonedDoc: Document) => {
-  const win = clonedDoc.defaultView;
-  if (win) {
+  const resolveToSlateHex = (colorStr: string): string => {
+    const match = colorStr.match(/(?:oklch|oklab)\(\s*([0-9.-]+%?)/i);
+    let lightness = 0.5;
+    if (match) {
+      const rawVal = match[1];
+      if (rawVal.endsWith('%')) {
+        lightness = parseFloat(rawVal) / 100;
+      } else {
+        lightness = parseFloat(rawVal);
+      }
+    }
+    
+    if (lightness >= 0.96) return '#FFFFFF';
+    if (lightness >= 0.92) return '#F8FAFC'; // slate-50
+    if (lightness >= 0.85) return '#F1F5F9'; // slate-100
+    if (lightness >= 0.75) return '#E2E8F0'; // slate-200
+    if (lightness >= 0.65) return '#CBD5E1'; // slate-300
+    if (lightness >= 0.55) return '#94A3B8'; // slate-400
+    if (lightness >= 0.45) return '#64748B'; // slate-500
+    if (lightness >= 0.35) return '#475569'; // slate-600
+    if (lightness >= 0.25) return '#334155'; // slate-700
+    if (lightness >= 0.15) return '#1E293B'; // slate-800
+    return '#0F172A'; // slate-900
+  };
+
+  const sanitizeColorValue = (value: string): string => {
+    if (typeof value === 'string' && (value.includes('oklch') || value.includes('oklab'))) {
+      return resolveToSlateHex(value);
+    }
+    return value;
+  };
+
+  const patchWin = (win: Window) => {
+    if (!win || (win as any).__oklPatched) return;
+    (win as any).__oklPatched = true;
     const originalGetComputedStyle = win.getComputedStyle;
     win.getComputedStyle = function (el: Element, pseudoElt?: string | null) {
       const style = originalGetComputedStyle.call(this, el, pseudoElt);
       return new Proxy(style, {
         get(target, prop) {
+          if (prop === 'getPropertyValue') {
+            return function (propertyName: string) {
+              const val = target.getPropertyValue(propertyName);
+              return sanitizeColorValue(val);
+            };
+          }
           const value = target[prop as any];
-          if (typeof value === 'string' && (value.includes('oklch') || value.includes('oklab'))) {
-            // Parse lightness to supply appropriate light/dark fallback colors
-            const match = value.match(/(?:oklch|oklab)\(\s*([0-9.-]+%?)/i);
-            let lightness = 0.5;
-            if (match) {
-              const rawVal = match[1];
-              if (rawVal.endsWith('%')) {
-                lightness = parseFloat(rawVal) / 100;
-              } else {
-                lightness = parseFloat(rawVal);
-              }
-            }
-            const propName = String(prop).toLowerCase();
-            if (propName.includes('background')) {
-              return lightness > 0.6 ? '#FFFFFF' : '#0F172A';
-            } else if (propName.includes('border')) {
-              return '#E2E8F0';
-            } else if (propName.includes('color')) {
-              return lightness > 0.6 ? '#FFFFFF' : '#0F172A';
-            } else if (propName.includes('fill')) {
-              return lightness > 0.6 ? '#FFFFFF' : '#888888';
-            } else if (propName.includes('stroke')) {
-              return lightness > 0.6 ? '#FFFFFF' : '#888888';
-            }
-            return lightness > 0.6 ? '#FFFFFF' : '#000000';
+          if (typeof value === 'string') {
+            return sanitizeColorValue(value);
           }
           if (typeof value === 'function') {
             return value.bind(target);
@@ -130,13 +146,22 @@ const cleanOklColorsAndPatchGetComputedStyle = (clonedDoc: Document) => {
         }
       }) as any;
     };
+  };
+
+  // Patch cloned iframe's window
+  if (clonedDoc.defaultView) {
+    patchWin(clonedDoc.defaultView);
+  }
+  // Also patch the main window
+  if (typeof window !== 'undefined') {
+    patchWin(window);
   }
 
   // 1. Process all styles safely with a regex that supports nesting
   const oklColorRegex = /(oklch|oklab)\((?:[^()]+|\([^()]*\))*\)/gi;
   clonedDoc.querySelectorAll('style').forEach(styleTag => {
     if (styleTag.innerHTML.includes('oklch') || styleTag.innerHTML.includes('oklab')) {
-      styleTag.innerHTML = styleTag.innerHTML.replace(oklColorRegex, '#000000');
+      styleTag.innerHTML = styleTag.innerHTML.replace(oklColorRegex, (m) => resolveToSlateHex(m));
     }
   });
 
@@ -144,7 +169,7 @@ const cleanOklColorsAndPatchGetComputedStyle = (clonedDoc: Document) => {
   clonedDoc.querySelectorAll('*').forEach((el: any) => {
     if (el.style) {
       if (el.style.cssText && (el.style.cssText.includes('oklch') || el.style.cssText.includes('oklab'))) {
-        el.style.cssText = el.style.cssText.replace(oklColorRegex, '#000000');
+        el.style.cssText = el.style.cssText.replace(oklColorRegex, (m) => resolveToSlateHex(m));
       }
     }
   });

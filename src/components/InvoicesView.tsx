@@ -30,7 +30,11 @@ import {
   deleteDoc, 
   doc, 
   updateDoc, 
-  serverTimestamp 
+  serverTimestamp,
+  query,
+  where,
+  getDocs,
+  setDoc
 } from 'firebase/firestore';
 import { Invoice, InvoiceItem } from '../types';
 import html2canvas from 'html2canvas';
@@ -45,39 +49,55 @@ interface InvoicesViewProps {
 
 // Custom getComputedStyle clean up helper to prevent oklch/oklab failures inside html2canvas
 const cleanOklColorsAndPatchGetComputedStyle = (clonedDoc: Document) => {
-  const win = clonedDoc.defaultView;
-  if (win) {
+  const resolveToSlateHex = (colorStr: string): string => {
+    const match = colorStr.match(/(?:oklch|oklab)\(\s*([0-9.-]+%?)/i);
+    let lightness = 0.5;
+    if (match) {
+      const rawVal = match[1];
+      if (rawVal.endsWith('%')) {
+        lightness = parseFloat(rawVal) / 100;
+      } else {
+        lightness = parseFloat(rawVal);
+      }
+    }
+    
+    if (lightness >= 0.96) return '#FFFFFF';
+    if (lightness >= 0.92) return '#F8FAFC'; // slate-50
+    if (lightness >= 0.85) return '#F1F5F9'; // slate-100
+    if (lightness >= 0.75) return '#E2E8F0'; // slate-200
+    if (lightness >= 0.65) return '#CBD5E1'; // slate-300
+    if (lightness >= 0.55) return '#94A3B8'; // slate-400
+    if (lightness >= 0.45) return '#64748B'; // slate-500
+    if (lightness >= 0.35) return '#475569'; // slate-600
+    if (lightness >= 0.25) return '#334155'; // slate-700
+    if (lightness >= 0.15) return '#1E293B'; // slate-800
+    return '#0F172A'; // slate-900
+  };
+
+  const sanitizeColorValue = (value: string): string => {
+    if (typeof value === 'string' && (value.includes('oklch') || value.includes('oklab'))) {
+      return resolveToSlateHex(value);
+    }
+    return value;
+  };
+
+  const patchWin = (win: Window) => {
+    if (!win || (win as any).__oklPatched) return;
+    (win as any).__oklPatched = true;
     const originalGetComputedStyle = win.getComputedStyle;
     win.getComputedStyle = function (el: Element, pseudoElt?: string | null) {
       const style = originalGetComputedStyle.call(this, el, pseudoElt);
       return new Proxy(style, {
         get(target, prop) {
+          if (prop === 'getPropertyValue') {
+            return function (propertyName: string) {
+              const val = target.getPropertyValue(propertyName);
+              return sanitizeColorValue(val);
+            };
+          }
           const value = target[prop as any];
-          if (typeof value === 'string' && (value.includes('oklch') || value.includes('oklab'))) {
-            // Parse lightness to supply appropriate light/dark fallback colors
-            const match = value.match(/(?:oklch|oklab)\(\s*([0-9.-]+%?)/i);
-            let lightness = 0.5;
-            if (match) {
-              const rawVal = match[1];
-              if (rawVal.endsWith('%')) {
-                lightness = parseFloat(rawVal) / 100;
-              } else {
-                lightness = parseFloat(rawVal);
-              }
-            }
-            const propName = String(prop).toLowerCase();
-            if (propName.includes('background')) {
-              return lightness > 0.6 ? '#FFFFFF' : '#0F172A';
-            } else if (propName.includes('border')) {
-              return '#E2E8F0';
-            } else if (propName.includes('color')) {
-              return lightness > 0.6 ? '#FFFFFF' : '#0F172A';
-            } else if (propName.includes('fill')) {
-              return lightness > 0.6 ? '#FFFFFF' : '#888888';
-            } else if (propName.includes('stroke')) {
-              return lightness > 0.6 ? '#FFFFFF' : '#888888';
-            }
-            return lightness > 0.6 ? '#FFFFFF' : '#000000';
+          if (typeof value === 'string') {
+            return sanitizeColorValue(value);
           }
           if (typeof value === 'function') {
             return value.bind(target);
@@ -86,13 +106,22 @@ const cleanOklColorsAndPatchGetComputedStyle = (clonedDoc: Document) => {
         }
       }) as any;
     };
+  };
+
+  // Patch cloned iframe's window
+  if (clonedDoc.defaultView) {
+    patchWin(clonedDoc.defaultView);
+  }
+  // Also patch the main window
+  if (typeof window !== 'undefined') {
+    patchWin(window);
   }
 
   // 1. Process all styles safely with a regex that supports nesting
   const oklColorRegex = /(oklch|oklab)\((?:[^()]+|\([^()]*\))*\)/gi;
   clonedDoc.querySelectorAll('style').forEach(styleTag => {
     if (styleTag.innerHTML.includes('oklch') || styleTag.innerHTML.includes('oklab')) {
-      styleTag.innerHTML = styleTag.innerHTML.replace(oklColorRegex, '#000000');
+      styleTag.innerHTML = styleTag.innerHTML.replace(oklColorRegex, (m) => resolveToSlateHex(m));
     }
   });
 
@@ -100,7 +129,7 @@ const cleanOklColorsAndPatchGetComputedStyle = (clonedDoc: Document) => {
   clonedDoc.querySelectorAll('*').forEach((el: any) => {
     if (el.style) {
       if (el.style.cssText && (el.style.cssText.includes('oklch') || el.style.cssText.includes('oklab'))) {
-        el.style.cssText = el.style.cssText.replace(oklColorRegex, '#000000');
+        el.style.cssText = el.style.cssText.replace(oklColorRegex, (m) => resolveToSlateHex(m));
       }
     }
   });
@@ -135,14 +164,36 @@ export default function InvoicesView({ invoices, user, services, settings }: Inv
   const handleDelete = async (id: string) => {
     if (!window.confirm('هل أنت متأكد من رغبتك في حذف هذه الفاتورة نهائياً؟')) return;
     try {
+      const inv = invoices.find(i => i.id === id);
+      
       if (user?.isLocalGuest) {
         const localInvoices = JSON.parse(localStorage.getItem('local_invoices') || '[]');
         const filtered = localInvoices.filter((i: any) => i.id !== id);
         localStorage.setItem('local_invoices', JSON.stringify(filtered));
+        
+        const localReves = JSON.parse(localStorage.getItem('local_revenues') || '[]');
+        const filteredReves = localReves.filter((r: any) => r.invoiceId !== id && r.id !== inv?.revenueId);
+        localStorage.setItem('local_revenues', JSON.stringify(filteredReves));
+        
         window.dispatchEvent(new Event('localDataChanged'));
         return;
       }
+      
       await deleteDoc(doc(services.db, 'invoices', id));
+      
+      if (inv?.revenueId) {
+        try {
+          await deleteDoc(doc(services.db, 'revenues', inv.revenueId));
+        } catch (e) {}
+      } else {
+        const q = query(collection(services.db, 'revenues'), where('invoiceId', '==', id));
+        const qSnap = await getDocs(q);
+        for (const docItem of qSnap.docs) {
+          try {
+            await deleteDoc(doc(services.db, 'revenues', docItem.id));
+          } catch (e) {}
+        }
+      }
     } catch (err) {
       console.error('Error deleting invoice: ', err);
     }
@@ -358,6 +409,8 @@ function AddEditInvoiceModal({ invoice, user, services, settings, onClose }: { i
   const [date, setDate] = useState(invoice?.date || format(new Date(), 'yyyy-MM-dd'));
   const [dueDate, setDueDate] = useState(invoice?.dueDate || format(new Date(), 'yyyy-MM-dd'));
   const [notes, setNotes] = useState(invoice?.notes || 'نشكركم لثقتكم بنا وبخدماتنا!');
+  const [paymentMethod, setPaymentMethod] = useState<string>((invoice as any)?.paymentMethod || 'bank_transfer');
+  const [primaryProductType, setPrimaryProductType] = useState<string>((invoice as any)?.primaryProductType || '');
   
   // Logo customization state
   const [logoPreset, setLogoPreset] = useState(invoice?.logoPreset || 'default');
@@ -369,6 +422,17 @@ function AddEditInvoiceModal({ invoice, user, services, settings, onClose }: { i
   ]);
   const [taxRate, setTaxRate] = useState<number>(invoice?.taxRate !== undefined ? invoice.taxRate : (settings.isTaxRegistered ? settings.taxRate : 0));
   const [discount, setDiscount] = useState<number>(invoice?.discount || 0);
+
+  // Helper to detect product type based on containing text
+  const detectedType = useMemo(() => {
+    for (const item of items) {
+      const name = (item.name || '').toLowerCase();
+      if (name.includes('أكريليك') || name.includes('acrylic')) return 'acrylic';
+      if (name.includes('خشب') || name.includes('wood')) return 'wood';
+      if (name.includes('svg') || name.includes('ملف') || name.includes('تصميم') || name.includes('شعار')) return 'svg';
+    }
+    return 'other';
+  }, [items]);
 
   // Bulk Import state
   const [showBulkImport, setShowBulkImport] = useState(false);
@@ -503,6 +567,8 @@ function AddEditInvoiceModal({ invoice, user, services, settings, onClose }: { i
       return;
     }
 
+    const finalProductType = primaryProductType || detectedType;
+
     const payload: any = {
       userId: user?.uid || '',
       invoiceNumber: invoiceNumber || '',
@@ -519,6 +585,8 @@ function AddEditInvoiceModal({ invoice, user, services, settings, onClose }: { i
       taxAmount: settings.isTaxRegistered ? (Number(calculatedTaxAmount) || 0) : 0,
       discount: Number(discount) || 0,
       grandTotal: settings.isTaxRegistered ? (Number(calculatedGrandTotal) || 0) : (Number(calculatedSubtotal) - Number(discount)),
+      paymentMethod: paymentMethod,
+      primaryProductType: finalProductType,
       updatedAt: serverTimestamp()
     };
 
@@ -529,22 +597,72 @@ function AddEditInvoiceModal({ invoice, user, services, settings, onClose }: { i
     try {
       if (user?.isLocalGuest) {
         const localInvoices = JSON.parse(localStorage.getItem('local_invoices') || '[]');
+        const localRevenues = JSON.parse(localStorage.getItem('local_revenues') || '[]');
         const localPayload = { ...payload };
         localPayload.updatedAt = { seconds: Date.now() / 1000, nanoseconds: 0 };
         
         if (isEdit && invoice) {
           const index = localInvoices.findIndex((i: any) => i.id === invoice.id);
+          const existingInv = index !== -1 ? localInvoices[index] : null;
+          const revId = existingInv?.revenueId || invoice.revenueId;
+          
+          localPayload.revenueId = revId;
+          
           if (index !== -1) {
             localInvoices[index] = { ...localInvoices[index], ...localPayload };
           }
           localStorage.setItem('local_invoices', JSON.stringify(localInvoices));
-          alert('تم تعديل الفاتورة وحفظ التغييرات بنجاح!');
+          
+          const revPayload = {
+            id: revId || `local-revenue-${Date.now()}-${Math.random()}`,
+            userId: user.uid,
+            amount: localPayload.grandTotal,
+            productType: finalProductType,
+            orderNumber: localPayload.invoiceNumber,
+            description: `فاتورة مبيعات رقم ${localPayload.invoiceNumber} للعميل ${localPayload.customerName}`,
+            date: new Date(localPayload.date).toISOString(),
+            paymentMethod: paymentMethod,
+            taxAmount: localPayload.taxAmount || 0,
+            invoiceId: invoice.id,
+            createdAt: existingInv?.createdAt || { seconds: Date.now() / 1000, nanoseconds: 0 }
+          };
+          
+          const revIndex = localRevenues.findIndex((r: any) => r.id === revId || r.invoiceId === invoice.id);
+          if (revIndex !== -1) {
+            localRevenues[revIndex] = { ...localRevenues[revIndex], ...revPayload };
+          } else {
+            localRevenues.push(revPayload);
+          }
+          localStorage.setItem('local_revenues', JSON.stringify(localRevenues));
+          
+          alert('تم تعديل الفاتورة وحفظ التغييرات وتحديث المبيعات بنجاح!');
         } else {
-          localPayload.id = `local-invoice-${Date.now()}-${Math.random()}`;
+          const invId = `local-invoice-${Date.now()}-${Math.random()}`;
+          const revId = `local-revenue-${Date.now()}-${Math.random()}`;
+          
+          localPayload.id = invId;
+          localPayload.revenueId = revId;
           localPayload.createdAt = { seconds: Date.now() / 1000, nanoseconds: 0 };
           localInvoices.push(localPayload);
           localStorage.setItem('local_invoices', JSON.stringify(localInvoices));
-          alert('تم إنشاء الفاتورة وحفظها بنجاح!');
+          
+          const revPayload = {
+            id: revId,
+            userId: user.uid,
+            amount: localPayload.grandTotal,
+            productType: finalProductType,
+            orderNumber: localPayload.invoiceNumber,
+            description: `فاتورة مبيعات رقم ${localPayload.invoiceNumber} للعميل ${localPayload.customerName}`,
+            date: new Date(localPayload.date).toISOString(),
+            paymentMethod: paymentMethod,
+            taxAmount: localPayload.taxAmount || 0,
+            invoiceId: invId,
+            createdAt: { seconds: Date.now() / 1000, nanoseconds: 0 }
+          };
+          localRevenues.push(revPayload);
+          localStorage.setItem('local_revenues', JSON.stringify(localRevenues));
+          
+          alert('تم إنشاء الفاتورة وقيدها في المبيعات بنجاح!');
         }
         window.dispatchEvent(new Event('localDataChanged'));
         onClose();
@@ -552,11 +670,80 @@ function AddEditInvoiceModal({ invoice, user, services, settings, onClose }: { i
       }
 
       if (isEdit && invoice) {
+        const revId = invoice.revenueId;
+        payload.revenueId = revId || null;
+        
         await updateDoc(doc(services.db, 'invoices', invoice.id), payload);
-        alert('تم تعديل الفاتورة وحفظ التغييرات بنجاح!');
+        
+        const revPayload: any = {
+          amount: payload.grandTotal,
+          productType: finalProductType,
+          orderNumber: payload.invoiceNumber,
+          description: `فاتورة مبيعات رقم ${payload.invoiceNumber} للعميل ${payload.customerName}`,
+          date: new Date(payload.date || Date.now()).toISOString(),
+          paymentMethod: paymentMethod,
+          taxAmount: payload.taxAmount || 0,
+          invoiceId: invoice.id,
+          updatedAt: serverTimestamp()
+        };
+        
+        if (revId) {
+          try {
+            await updateDoc(doc(services.db, 'revenues', revId), revPayload);
+          } catch (e) {
+            await setDoc(doc(services.db, 'revenues', revId), {
+              ...revPayload,
+              userId: user.uid,
+              createdAt: serverTimestamp()
+            });
+          }
+        } else {
+          const q = query(collection(services.db, 'revenues'), where('invoiceId', '==', invoice.id));
+          const qSnap = await getDocs(q);
+          if (!qSnap.empty) {
+            const existingRevId = qSnap.docs[0].id;
+            await updateDoc(doc(services.db, 'revenues', existingRevId), revPayload);
+            await updateDoc(doc(services.db, 'invoices', invoice.id), { revenueId: existingRevId });
+          } else {
+            const newRevRef = doc(collection(services.db, 'revenues'));
+            await setDoc(newRevRef, {
+              ...revPayload,
+              userId: user.uid,
+              createdAt: serverTimestamp()
+            });
+            await updateDoc(doc(services.db, 'invoices', invoice.id), { revenueId: newRevRef.id });
+          }
+        }
+        
+        alert('تم تعديل الفاتورة وتحديث المبيعات بنجاح!');
       } else {
-        await addDoc(collection(services.db, 'invoices'), payload);
-        alert('تم إنشاء الفاتورة وحفظها بنجاح!');
+        const newInvoiceRef = doc(collection(services.db, 'invoices'));
+        const newInvoiceId = newInvoiceRef.id;
+        
+        const newRevenueRef = doc(collection(services.db, 'revenues'));
+        const newRevenueId = newRevenueRef.id;
+        
+        payload.id = newInvoiceId;
+        payload.revenueId = newRevenueId;
+        payload.createdAt = serverTimestamp();
+        
+        await setDoc(newInvoiceRef, payload);
+        
+        const revPayload = {
+          userId: user.uid,
+          amount: payload.grandTotal,
+          productType: finalProductType,
+          orderNumber: payload.invoiceNumber,
+          description: `فاتورة مبيعات رقم ${payload.invoiceNumber} للعميل ${payload.customerName}`,
+          date: new Date(payload.date || Date.now()).toISOString(),
+          paymentMethod: paymentMethod,
+          taxAmount: payload.taxAmount || 0,
+          invoiceId: newInvoiceId,
+          createdAt: serverTimestamp()
+        };
+        await setDoc(newRevenueRef, revPayload);
+        
+        alert('تم إنشاء الفاتورة وقيدها في المبيعات بنجاح!');
       }
       onClose();
     } catch (err: any) {
@@ -698,12 +885,55 @@ function AddEditInvoiceModal({ invoice, user, services, settings, onClose }: { i
               <div>
                 <p className="text-[10px] font-bold text-emerald-600 flex items-center gap-1">
                   <Sparkles size={11} />
-                  تم تحميل الشعار המخصص بنجاح وسيتم إدراجه بالفواتير
+                  تم تحميل الشعار المخصص بنجاح وسيتم إدراجه بالفواتير
                 </p>
                 <p className="text-[9px] text-slate-400">سيظهر بشكل متناسق في ملف الـ PDF المطبوع والكروكي الصوري</p>
               </div>
             </div>
           )}
+
+          {/* Sales Connection Fields (ارتباط المبيعات) */}
+          <div className="bg-emerald-50/40 border border-emerald-100/50 rounded-2xl p-5 space-y-4">
+            <h4 className="text-xs font-bold text-emerald-800 flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+              قيد المبيعات والربط المالي التلقائي
+            </h4>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] font-bold text-slate-500">طريقة الدفع المقبوضة لـ المبيعات</label>
+                <select 
+                  value={paymentMethod}
+                  onChange={e => setPaymentMethod(e.target.value)}
+                  className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 font-bold focus:border-emerald-500 outline-none"
+                >
+                  <option value="bank_transfer">تحويل بنكي</option>
+                  <option value="mada">مدى (Mada)</option>
+                  <option value="apple_pay">آبل باي (Apple Pay)</option>
+                  <option value="cash">نقداً (Cash)</option>
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] font-bold text-slate-500">تصنيف المنتج لـ المبيعات</label>
+                <select 
+                  value={primaryProductType}
+                  onChange={e => setPrimaryProductType(e.target.value)}
+                  className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 font-bold focus:border-emerald-500 outline-none"
+                >
+                  <option value="">كشف تلقائي الذكي: ({
+                    detectedType === 'acrylic' ? 'منتجات أكريليك' :
+                    detectedType === 'wood' ? 'منتجات خشبية' :
+                    detectedType === 'svg' ? 'ملفات رقمية (SVG)' : 'منتج آخر'
+                  })</option>
+                  <option value="acrylic">منتجات أكريليك</option>
+                  <option value="wood">منتجات خشبية</option>
+                  <option value="svg">ملفات رقمية (SVG)</option>
+                  <option value="other">منتج آخر</option>
+                </select>
+              </div>
+            </div>
+          </div>
 
           {/* Dynamic Items Sheets Rows */}
           <div className="space-y-3 pt-2">
