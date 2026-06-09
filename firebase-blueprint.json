@@ -55,6 +55,29 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["userId", "material", "estimatedCost", "date", "createdAt"]
+    },
+    "Invoice": {
+      "title": "Invoice Record",
+      "description": "Record of a customer invoice with multiple items, optional PDF logo and totals.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "invoiceNumber": { "type": "string" },
+        "customerName": { "type": "string" },
+        "customerPhone": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "dueDate": { "type": "string", "format": "date-time" },
+        "items": { "type": "array" },
+        "taxRate": { "type": "number" },
+        "taxAmount": { "type": "number" },
+        "discount": { "type": "number" },
+        "grandTotal": { "type": "number" },
+        "notes": { "type": "string" },
+        "logoPreset": { "type": "string" },
+        "customLogoBase64": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "invoiceNumber", "customerName", "date", "items", "grandTotal", "createdAt"]
     }
   },
   "firestore": {
@@ -73,6 +96,10 @@
     "waste/{wasteId}": {
       "schema": "WasteItem",
       "description": "Collection of material waste records."
+    },
+    "invoices/{invoiceId}": {
+      "schema": "Invoice",
+      "description": "Collection of customer invoices."
     }
   }
 }

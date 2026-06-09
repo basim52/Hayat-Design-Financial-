@@ -79,8 +79,11 @@ import {
   Revenue, 
   WasteItem, 
   Category, 
-  ProductType 
+  ProductType,
+  Invoice,
+  InvoiceItem
 } from './types';
+import InvoicesView from './components/InvoicesView';
 
 // --- Helpers ---
 
@@ -208,7 +211,7 @@ export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [services, setServices] = useState<{ db: any, auth: any }>({ db: initialDb, auth: initialAuth });
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'expenses' | 'revenues' | 'budget' | 'waste' | 'reports' | 'settings'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'expenses' | 'revenues' | 'budget' | 'waste' | 'reports' | 'settings' | 'invoices'>('dashboard');
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   
   const [settings, setSettings] = useState(() => {
@@ -240,6 +243,7 @@ export default function App() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [revenues, setRevenues] = useState<Revenue[]>([]);
   const [waste, setWaste] = useState<WasteItem[]>([]);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
   const dashboardRef = useRef<HTMLDivElement>(null);
 
   // Init Firebase
@@ -281,11 +285,16 @@ export default function App() {
       setWaste(snap.docs.map(d => ({ id: d.id, ...d.data() } as WasteItem)));
     }, (err) => console.error("Wastes listener error:", err));
 
+    const unsubInvoices = onSnapshot(collection(services.db, 'invoices'), (snap) => {
+      setInvoices(snap.docs.map(d => ({ id: d.id, ...d.data() } as Invoice)));
+    }, (err) => console.error("Invoices listener error:", err));
+
     return () => {
       unsubBudgets();
       unsubExpenses();
       unsubRevenues();
       unsubWaste();
+      unsubInvoices();
     };
   }, [user, services.db]);
 
@@ -436,6 +445,7 @@ export default function App() {
               <NavItem icon={<LayoutDashboard size={18} />} label="الرئيسية" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
               <NavItem icon={<Receipt size={18} />} label="المصاريف" active={activeTab === 'expenses'} onClick={() => setActiveTab('expenses')} />
               <NavItem icon={<ShoppingBag size={18} />} label="المبيعات" active={activeTab === 'revenues'} onClick={() => setActiveTab('revenues')} />
+              <NavItem icon={<FileText size={18} />} label="الملفات والفواتير" active={activeTab === 'invoices'} onClick={() => setActiveTab('invoices')} />
               <NavItem icon={<Target size={18} />} label="الميزانية" active={activeTab === 'budget'} onClick={() => setActiveTab('budget')} />
               <NavItem icon={<AlertTriangle size={18} />} label="الهدر" active={activeTab === 'waste'} onClick={() => setActiveTab('waste')} />
               <NavItem icon={<FileBarChart size={18} />} label="التقارير" active={activeTab === 'reports'} onClick={() => setActiveTab('reports')} />
@@ -554,6 +564,18 @@ export default function App() {
                 </button>
 
                 <button 
+                  onClick={() => { setActiveTab('invoices'); setShowMoreMenu(false); }}
+                  className={`flex flex-col items-center justify-center p-5 rounded-2xl border transition-all text-center gap-2.5 ${
+                    activeTab === 'invoices' 
+                      ? 'bg-hayat-navy/5 border-hayat-navy text-hayat-navy font-bold' 
+                      : 'bg-hayat-accent border-hayat-border/40 text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  <FileText size={20} className={activeTab === 'invoices' ? 'text-hayat-wood' : 'text-slate-400'} />
+                  <span className="font-bold text-xs">الملفات والفواتير</span>
+                </button>
+
+                <button 
                   onClick={() => { setActiveTab('settings'); setShowMoreMenu(false); }}
                   className={`flex flex-col items-center justify-center p-5 rounded-2xl border transition-all text-center gap-2.5 ${
                     activeTab === 'settings' 
@@ -605,6 +627,7 @@ export default function App() {
           )}
           {activeTab === 'expenses' && <DataListSection title="إدارة المصاريف" type="expense" items={expenses} user={user} services={services} settings={settings} />}
           {activeTab === 'revenues' && <DataListSection title="إدارة المبيعات" type="revenue" items={revenues} user={user} services={services} settings={settings} />}
+          {activeTab === 'invoices' && <InvoicesView invoices={invoices} user={user} services={services} settings={settings} />}
           {activeTab === 'budget' && <DataListSection title="تخطيط الميزانية" type="budget" items={budgets} user={user} services={services} settings={settings} />}
           {activeTab === 'waste' && <DataListSection title="تتبع الهدر" type="waste" items={waste} user={user} services={services} settings={settings} />}
           {activeTab === 'reports' && <ReportsView expenses={expenses} revenues={revenues} budgets={budgets} waste={waste} setActiveTab={setActiveTab} settings={settings} />}

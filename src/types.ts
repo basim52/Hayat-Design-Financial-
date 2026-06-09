@@ -49,3 +49,31 @@ export interface WasteItem {
   date: string; // ISO string
   createdAt: any;
 }
+
+export interface InvoiceItem {
+  id: string;
+  name: string;      // الصنف / المنتج
+  quantity: number;  // الكمية
+  price: number;     // المبلغ / السعر الفردي
+  total: number;     // الإجمالي
+}
+
+export interface Invoice {
+  id: string;
+  userId: string;
+  invoiceNumber: string;
+  customerName: string;
+  customerPhone?: string;
+  date: string; // YYYY-MM-DD
+  dueDate?: string; // YYYY-MM-DD
+  items: InvoiceItem[];
+  subtotal: number;
+  taxRate: number;
+  taxAmount: number;
+  discount: number;
+  grandTotal: number;
+  notes?: string;
+  logoPreset?: string; // e.g. "default", "luxury", "coffee", "creative", "none"
+  customLogoBase64?: string; // Base64 uploaded logo for high fidelity image/PDF print
+  createdAt: any;
+}
