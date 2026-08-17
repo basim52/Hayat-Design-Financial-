@@ -55,7 +55,9 @@ import {
   ShieldAlert,
   AlertOctagon,
   AlertCircle,
-  PieChart as PieChartIcon
+  PieChart as PieChartIcon,
+  Download,
+  Image as ImageIcon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { format, startOfMonth, endOfMonth, parseISO, isSameMonth } from 'date-fns';
@@ -3797,6 +3799,7 @@ function SettingsView({ settings, setSettings }: { settings: any, setSettings: a
 function ReceiptVoucherModal({ item, type, settings, onClose }: { item: any, type: string, settings: any, onClose: () => void }) {
   const isRevenue = type === 'revenue';
   const displayId = item.id ? item.id.substring(0, 8).toUpperCase() : 'N/A';
+  const [isExportingImage, setIsExportingImage] = useState(false);
   
   const voucherTitle = isRevenue 
     ? "سند قبض ومبيعات معتمد" 
@@ -3817,13 +3820,43 @@ function ReceiptVoucherModal({ item, type, settings, onClose }: { item: any, typ
     window.print();
   };
 
+  const handleExportImage = async () => {
+    const voucherElement = document.getElementById('printable-voucher');
+    if (!voucherElement) return;
+
+    try {
+      setIsExportingImage(true);
+      const canvas = await html2canvas(voucherElement, {
+        scale: 3, // High-DPI crisp quality
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        logging: false
+      });
+
+      const imageURI = canvas.toDataURL('image/png', 1.0);
+      const fileName = `سند_${displayId}_${isRevenue ? 'مبيعات' : type === 'expense' ? 'مصروف' : 'هدر'}.png`;
+
+      const downloadLink = document.createElement('a');
+      downloadLink.href = imageURI;
+      downloadLink.download = fileName;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+    } catch (err) {
+      console.error('Failed to export voucher image:', err);
+      alert('حدث خطأ أثناء تصدير السند كصورة، يرجى المحاولة مرة أخرى.');
+    } finally {
+      setIsExportingImage(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
       <motion.div 
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="bg-white rounded-[2.5rem] shadow-hayat-lg overflow-hidden border border-hayat-border/60 max-w-2xl w-full flex flex-col"
+        className="bg-white rounded-[2.5rem] shadow-hayat-lg overflow-hidden border border-hayat-border/60 max-w-2xl w-full flex flex-col my-auto"
       >
         {/* Modal Actions Header */}
         <div className="bg-slate-50 px-6 py-4 border-b border-hayat-border/40 flex justify-between items-center text-hayat-navy">
@@ -3831,13 +3864,13 @@ function ReceiptVoucherModal({ item, type, settings, onClose }: { item: any, typ
             <span className="w-2 h-2 rounded-full bg-hayat-wood animate-pulse"></span>
             <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">سند ومعاملة معتمدة</p>
           </div>
-          <button onClick={onClose} className="p-1 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-slate-100 transition-colors">
+          <button onClick={onClose} className="p-1 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-slate-100 transition-colors cursor-pointer">
             <X size={18} />
           </button>
         </div>
 
         {/* Voucher Bill Body */}
-        <div id="printable-voucher" className="p-6 md:p-10 space-y-6 md:space-y-8 print:p-8">
+        <div id="printable-voucher" className="p-6 md:p-10 space-y-6 md:space-y-8 print:p-8 bg-white">
           {/* Business Header */}
           <div className="text-center space-y-2 border-b border-hayat-border/60 pb-6 font-sans">
             <h3 className="font-serif text-xl md:text-2xl text-hayat-navy font-bold leading-tight">{settings.storeName}</h3>
@@ -3940,20 +3973,39 @@ function ReceiptVoucherModal({ item, type, settings, onClose }: { item: any, typ
         </div>
 
         {/* Modal Actions Footer */}
-        <div className="bg-slate-50 px-6 py-4.5 md:px-10 md:py-6 border-t border-hayat-border/40 flex justify-end gap-3" data-html2canvas-ignore="true">
+        <div className="bg-slate-50 px-6 py-4.5 md:px-10 md:py-6 border-t border-hayat-border/40 flex flex-wrap justify-between sm:justify-end items-center gap-2.5 sm:gap-3" data-html2canvas-ignore="true">
           <button 
             onClick={onClose}
-            className="px-5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-600 font-bold transition-all hover:bg-slate-50"
+            className="px-4 sm:px-5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-600 font-bold transition-all hover:bg-slate-50 cursor-pointer"
           >
             إغلاق النافذة
           </button>
-          <button 
-            onClick={handlePrint}
-            className="px-5 py-2.5 bg-hayat-navy text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-all hover:bg-hayat-navy/95 shadow-sm"
-          >
-            <Printer size={14} />
-            طباعة السند
-          </button>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={handleExportImage}
+              disabled={isExportingImage}
+              className="px-4 sm:px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 active:scale-95 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-all shadow-sm cursor-pointer disabled:opacity-50"
+            >
+              {isExportingImage ? (
+                <>
+                  <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <span>جارِ تجهيز الصورة...</span>
+                </>
+              ) : (
+                <>
+                  <Download size={14} />
+                  <span>تصدير كصورة</span>
+                </>
+              )}
+            </button>
+            <button 
+              onClick={handlePrint}
+              className="px-4 sm:px-5 py-2.5 bg-hayat-navy hover:bg-hayat-navy/95 active:scale-95 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-all shadow-sm cursor-pointer"
+            >
+              <Printer size={14} />
+              <span>طباعة السند</span>
+            </button>
+          </div>
         </div>
       </motion.div>
     </div>
