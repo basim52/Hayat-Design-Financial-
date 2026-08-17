@@ -51,7 +51,11 @@ import {
   CreditCard,
   ChevronDown,
   X,
-  Menu
+  Menu,
+  ShieldAlert,
+  AlertOctagon,
+  AlertCircle,
+  PieChart as PieChartIcon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { format, startOfMonth, endOfMonth, parseISO, isSameMonth } from 'date-fns';
@@ -655,19 +659,28 @@ export default function App() {
   return (
     <div className="min-h-screen bg-hayat-cream font-sans text-stone-800 rtl md:flex" dir="rtl">
       {/* Mobile Top Header */}
-      <header className="md:hidden bg-white/80 backdrop-blur-md border-b border-hayat-border/40 sticky top-0 px-6 py-4.5 flex justify-between items-center z-40 select-none">
+      <header className="md:hidden bg-white/90 backdrop-blur-lg border-b border-hayat-border/40 sticky top-0 px-4 sm:px-6 py-3.5 flex justify-between items-center z-40 select-none shadow-sm">
         <div className="flex items-center gap-2.5">
-          <Logo className="w-8 h-8" />
+          <Logo className="w-8 h-8 flex-shrink-0" />
           <div>
-            <h1 className="font-serif text-[17px] text-hayat-navy font-bold leading-none">{settings.storeName}</h1>
-            <p className="text-[8px] text-slate-400 font-extrabold uppercase tracking-wider mt-1">Financial Panel</p>
+            <div className="flex items-center gap-1.5">
+              <h1 className="font-serif text-[16px] text-hayat-navy font-bold leading-tight">{settings.storeName}</h1>
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[8px] font-black bg-emerald-100 text-emerald-800">نشط</span>
+            </div>
+            <p className="text-[8.5px] text-slate-400 font-extrabold uppercase tracking-wider">لوحة الإدارة والمحاسبة</p>
           </div>
         </div>
-        <div className="flex items-center gap-2.5">
-          <div className="text-left font-sans">
+        <div className="flex items-center gap-2">
+          <div className="text-left font-sans hidden sm:block">
             <p className="text-xs font-bold text-hayat-navy leading-none">{user.displayName?.split(' ')[0]}</p>
           </div>
-          <img src={user.photoURL || ''} className="w-8 h-8 rounded-xl border border-hayat-border/60 shadow-sm object-cover" alt="User" />
+          <button 
+            onClick={() => setShowMoreMenu(true)} 
+            className="relative focus:outline-none cursor-pointer"
+          >
+            <img src={user.photoURL || ''} className="w-8 h-8 rounded-xl border border-hayat-border/60 shadow-sm object-cover" alt="User" />
+            <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border border-white rounded-full"></div>
+          </button>
         </div>
       </header>
 
@@ -1093,10 +1106,10 @@ function DashboardHeader({ user, budgets, expenses, revenues, waste, dashboardRe
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard label="إجمالي المبيعات" value={totalRevenue} delay={0.1} />
-        <StatCard label="المصاريف الفعلية" value={totalExpense} delay={0.2} />
-        <StatCard label="صافي الربح" value={netProfit} delay={0.3} highlight />
-        <StatCard label="قيمة الهدر" value={totalWaste} delay={0.4} color="#A16207" />
+        <StatCard label="إجمالي المبيعات" value={totalRevenue} delay={0.1} color="#059669" />
+        <StatCard label="المصاريف الفعلية" value={totalExpense} delay={0.2} color="#E11D48" />
+        <StatCard label="صافي الربح" value={netProfit} delay={0.3} highlight color="#5B21B6" />
+        <StatCard label="قيمة الهدر" value={totalWaste} delay={0.4} color="#D97706" />
       </div>
     </div>
   );
@@ -1115,8 +1128,9 @@ function ExportButton({ label, onClick, disabled, last }: { label: string, onCli
 }
 
 function StatCard({ label, value, delay, highlight, color }: any) {
-  const navyColor = "#0F172A";
-  const woodColor = "#A16207";
+  const primaryColor = "#2E1065";
+  const emeraldColor = "#059669";
+  const violetColor = "#6D28D9";
   
   return (
     <motion.div 
@@ -1126,27 +1140,27 @@ function StatCard({ label, value, delay, highlight, color }: any) {
       className={`p-8 rounded-3xl transition-all border shadow-hayat relative overflow-hidden group`}
       style={{ 
         backgroundColor: '#FFFFFF',
-        borderColor: highlight ? woodColor : '#E2E8F0',
+        borderColor: highlight ? violetColor : '#E0E7FF',
         borderWidth: highlight ? '2px' : '1px'
       }}
     >
       {highlight && (
-         <div className="absolute top-0 right-0 w-24 h-24 bg-hayat-wood/5 rounded-bl-full -mr-12 -mt-12 transition-transform group-hover:scale-125"></div>
+         <div className="absolute top-0 right-0 w-24 h-24 bg-purple-600/5 rounded-bl-full -mr-12 -mt-12 transition-transform group-hover:scale-125"></div>
       )}
       <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-4 text-slate-400">{label}</p>
       <div className="flex items-baseline gap-2">
-         <p className="text-3xl font-bold tracking-tight" style={{ color: color || navyColor }}>{value.toLocaleString()}</p>
+         <p className="text-3xl font-bold tracking-tight" style={{ color: color || primaryColor }}>{value.toLocaleString()}</p>
          <span className="text-[10px] font-bold text-slate-400">ريال</span>
       </div>
       <div className="mt-6 flex items-center gap-2">
-         <div className="h-1 flex-1 bg-slate-50 rounded-full overflow-hidden">
+         <div className="h-1.5 flex-1 bg-purple-50 rounded-full overflow-hidden">
             <motion.div 
               initial={{ width: 0 }}
               animate={{ width: '65%' }}
-              className="h-full bg-hayat-wood/20 rounded-full"
+              className="h-full bg-emerald-500 rounded-full"
             />
          </div>
-         <span className="text-[9px] font-bold text-slate-300">Target</span>
+         <span className="text-[9px] font-bold text-slate-400">Target</span>
       </div>
     </motion.div>
   );
@@ -1172,8 +1186,9 @@ function DashboardContent({ budgets, expenses, revenues, waste }: any) {
     .sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime())
     .slice(0, 5);
 
-  const navyColor = "#0F172A";
-  const woodColor = "#A16207";
+  const navyColor = "#2E1065";
+  const woodColor = "#059669";
+  const purpleColor = "#6D28D9";
 
   return (
     <div className="space-y-10">
@@ -1190,11 +1205,11 @@ function DashboardContent({ budgets, expenses, revenues, waste }: any) {
                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Estimated vs Actual</p>
             </div>
             <div className="flex gap-6">
-               <div className="flex items-center gap-2 text-[10px] font-black text-slate-300 uppercase tracking-widest">
-                  <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: '#F1F5F9' }}></div> 
+               <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                  <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: '#EDE9FE' }}></div> 
                   تقديري
                </div>
-               <div className="flex items-center gap-2 text-[10px] font-black text-hayat-wood uppercase tracking-widest">
+               <div className="flex items-center gap-2 text-[10px] font-black text-emerald-600 uppercase tracking-widest">
                   <div className="w-2.5 h-2.5 rounded-sm shadow-sm" style={{ backgroundColor: woodColor }}></div> 
                   فعلي
                </div>
@@ -1204,18 +1219,18 @@ function DashboardContent({ budgets, expenses, revenues, waste }: any) {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={budgetVsActual} barGap={12}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" fontSize={10} fontWeight={700} tick={{ fill: '#94a3b8' }} axisLine={false} tickLine={false} dy={10} />
-                <YAxis fontSize={10} fontWeight={700} tick={{ fill: '#94a3b8' }} axisLine={false} tickLine={false} dx={-10} />
+                <XAxis dataKey="name" fontSize={10} fontWeight={700} tick={{ fill: '#64748b' }} axisLine={false} tickLine={false} dy={10} />
+                <YAxis fontSize={10} fontWeight={700} tick={{ fill: '#64748b' }} axisLine={false} tickLine={false} dx={-10} />
                 <Tooltip 
-                  cursor={{ fill: '#F9F7F5' }}
+                  cursor={{ fill: '#F8F7FD' }}
                   contentStyle={{ 
                     borderRadius: '16px', 
-                    border: '1px solid #e2e8f0', 
-                    boxShadow: '0 10px 15px -3px rgba(0,0,0,0.05)',
+                    border: '1px solid #e0e7ff', 
+                    boxShadow: '0 10px 15px -3px rgba(91,33,182,0.05)',
                     padding: '12px'
                   }}
                 />
-                <Bar name="التقديري" dataKey="target" fill="#f1f5f9" radius={[6, 6, 0, 0]} barSize={34} isAnimationActive={false} />
+                <Bar name="التقديري" dataKey="target" fill="#EDE9FE" radius={[6, 6, 0, 0]} barSize={34} isAnimationActive={false} />
                 <Bar name="الفعلي" dataKey="actual" fill={woodColor} radius={[6, 6, 0, 0]} barSize={34} isAnimationActive={false} />
               </BarChart>
             </ResponsiveContainer>
@@ -1240,12 +1255,12 @@ function DashboardContent({ budgets, expenses, revenues, waste }: any) {
               return (
                 <div key={idx}>
                   <div className="flex justify-between items-end mb-2.5">
-                    <span className="text-[11px] font-bold" style={{ color: '#475569' }}>{item.name}</span>
-                    <span className="text-[10px] font-black" style={{ color: isOver ? '#EF4444' : '#94A3B8' }}>
+                    <span className="text-[11px] font-bold text-slate-700">{item.name}</span>
+                    <span className="text-[10px] font-black" style={{ color: isOver ? '#EF4444' : '#059669' }}>
                       {Math.round(percentage)}%
                     </span>
                   </div>
-                  <div className="h-1.5 bg-slate-50 rounded-full overflow-hidden">
+                  <div className="h-2 bg-purple-50 rounded-full overflow-hidden">
                     <motion.div 
                       initial={{ width: 0 }}
                       animate={{ width: `${cappedPercentage}%` }}
@@ -1259,14 +1274,14 @@ function DashboardContent({ budgets, expenses, revenues, waste }: any) {
             })}
           </div>
           
-          <div className="mt-10 pt-10 border-t border-hayat-border/60">
+          <div className="mt-10 pt-10 border-t border-indigo-100/60">
             <h4 className="text-[10px] font-black uppercase tracking-widest mb-6 text-slate-400">Cash Flow Trend</h4>
             <div className="h-32">
                <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={generateCashFlowTrend(revenues, expenses)}>
                     <defs>
                       <linearGradient id="colorNet" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={woodColor} stopOpacity={0.15}/>
+                        <stop offset="5%" stopColor={woodColor} stopOpacity={0.25}/>
                         <stop offset="95%" stopColor={woodColor} stopOpacity={0}/>
                       </linearGradient>
                     </defs>
@@ -1292,23 +1307,23 @@ function DashboardContent({ budgets, expenses, revenues, waste }: any) {
           </div>
           <div className="space-y-1">
             {recentRevenues.length > 0 ? recentRevenues.map((r) => (
-              <div key={r.id} className="flex justify-between items-center p-4 rounded-2xl hover:bg-hayat-accent transition-all group border border-transparent hover:border-hayat-border/40">
+              <div key={r.id} className="flex justify-between items-center p-4 rounded-2xl hover:bg-purple-50/50 transition-all group border border-transparent hover:border-indigo-100">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110" style={{ backgroundColor: '#ECFDF5', color: '#10B981' }}>
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110" style={{ backgroundColor: '#ECFDF5', color: '#059669' }}>
                     <TrendingUp size={20} />
                   </div>
                   <div>
-                    <p className="text-sm font-bold" style={{ color: '#334155' }}>{translateProduct(r.productType)}</p>
-                    <p className="text-[10px] font-bold" style={{ color: '#94A3B8' }}>{safeFormat(r.date, 'dd MMMM')}</p>
+                    <p className="text-sm font-bold text-slate-800">{translateProduct(r.productType)}</p>
+                    <p className="text-[10px] font-bold text-slate-400">{safeFormat(r.date, 'dd MMMM')}</p>
                   </div>
                 </div>
                 <div className="text-left font-serif">
-                  <p className="text-lg font-bold" style={{ color: '#047857' }}>{r.amount.toLocaleString()} <span className="text-[10px] font-sans">ريال</span></p>
-                  <p className="text-[9px] font-bold uppercase tracking-tighter" style={{ color: '#94A3B8' }}>Reference: #{r.orderNumber || '----'}</p>
+                  <p className="text-lg font-bold text-emerald-700">{r.amount.toLocaleString()} <span className="text-[10px] font-sans font-bold">ريال</span></p>
+                  <p className="text-[9px] font-bold uppercase tracking-tighter text-slate-400">Reference: #{r.orderNumber || '----'}</p>
                 </div>
               </div>
             )) : (
-              <p className="text-center py-12 text-sm italic" style={{ color: '#94A3B8' }}>لا توجد مبيعات مسجلة</p>
+              <p className="text-center py-12 text-sm italic text-slate-400">لا توجد مبيعات مسجلة</p>
             )}
           </div>
         </motion.div>
@@ -1323,23 +1338,23 @@ function DashboardContent({ budgets, expenses, revenues, waste }: any) {
           </div>
           <div className="space-y-1">
             {recentExpenses.length > 0 ? recentExpenses.map((e) => (
-              <div key={e.id} className="flex justify-between items-center p-4 rounded-2xl hover:bg-hayat-accent transition-all group border border-transparent hover:border-hayat-border/40">
+              <div key={e.id} className="flex justify-between items-center p-4 rounded-2xl hover:bg-purple-50/50 transition-all group border border-transparent hover:border-indigo-100">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110" style={{ backgroundColor: '#FFF1F2', color: '#F43F5E' }}>
                     <Receipt size={20} />
                   </div>
                   <div>
-                    <p className="text-sm font-bold" style={{ color: '#334155' }}>{translateCategory(e.category)}</p>
-                    <p className="text-[10px] font-bold" style={{ color: '#94A3B8' }}>{safeFormat(e.date, 'dd MMMM')}</p>
+                    <p className="text-sm font-bold text-slate-800">{translateCategory(e.category)}</p>
+                    <p className="text-[10px] font-bold text-slate-400">{safeFormat(e.date, 'dd MMMM')}</p>
                   </div>
                 </div>
                 <div className="text-left font-serif">
-                  <p className="text-lg font-bold" style={{ color: '#BE123C' }}>{e.amount.toLocaleString()} <span className="text-[10px] font-sans">ريال</span></p>
-                  <p className="text-[9px] font-bold uppercase tracking-tighter truncate max-w-[120px]" style={{ color: '#94A3B8' }}>{e.description || 'General Operation'}</p>
+                  <p className="text-lg font-bold text-rose-700">{e.amount.toLocaleString()} <span className="text-[10px] font-sans font-bold">ريال</span></p>
+                  <p className="text-[9px] font-bold uppercase tracking-tighter truncate max-w-[120px] text-slate-400">{e.description || 'General Operation'}</p>
                 </div>
               </div>
             )) : (
-              <p className="text-center py-12 text-sm italic" style={{ color: '#94A3B8' }}>لا توجد مصاريف مسجلة</p>
+              <p className="text-center py-12 text-sm italic text-slate-400">لا توجد مصاريف مسجلة</p>
             )}
           </div>
         </motion.div>
@@ -1348,17 +1363,591 @@ function DashboardContent({ budgets, expenses, revenues, waste }: any) {
   );
 }
 
-// --- List Sections ---
+// --- Expense Category Pie Chart Analysis Component ---
+
+const EXPENSE_CATEGORY_COLORS: Record<string, string> = {
+  materials: '#5B21B6',   // Royal Violet
+  marketing: '#059669',   // Emerald Green
+  maintenance: '#D97706', // Amber Gold
+  wages: '#2563EB',       // Blue
+  other: '#E11D48',       // Rose Red
+};
+
+const EXPENSE_FALLBACK_COLORS = [
+  '#7C3AED', '#10B981', '#F59E0B', '#3B82F6', '#EC4899', 
+  '#06B6D4', '#8B5CF6', '#14B8A6', '#F97316', '#6366F1'
+];
+
+interface ExpensePieChartAnalysisProps {
+  expenses: Expense[];
+  title?: string;
+  subtitle?: string;
+  settings?: any;
+  compact?: boolean;
+}
+
+function ExpensePieChartAnalysis({
+  expenses,
+  title = "تحليل وتوزيع المصاريف حسب الفئات",
+  subtitle = "مخطط بياني دائري تفاعلي لعرض نسب وتفاصيل استهلاك النفقات التشغيلية",
+  settings,
+  compact = false
+}: ExpensePieChartAnalysisProps) {
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+
+  // Group and calculate statistics
+  const data = React.useMemo(() => {
+    const map: Record<string, { category: string; name: string; amount: number; count: number; tax: number }> = {};
+    expenses.forEach(e => {
+      const cat = e.category || 'other';
+      if (!map[cat]) {
+        map[cat] = {
+          category: cat,
+          name: translateCategory(cat),
+          amount: 0,
+          count: 0,
+          tax: 0
+        };
+      }
+      map[cat].amount += (e.amount || 0);
+      map[cat].count += 1;
+      map[cat].tax += (e.taxAmount || 0);
+    });
+
+    const total = Object.values(map).reduce((sum, item) => sum + item.amount, 0);
+
+    return Object.values(map)
+      .map((item, idx) => ({
+        ...item,
+        percentage: total > 0 ? (item.amount / total) * 100 : 0,
+        color: EXPENSE_CATEGORY_COLORS[item.category] || EXPENSE_FALLBACK_COLORS[idx % EXPENSE_FALLBACK_COLORS.length]
+      }))
+      .sort((a, b) => b.amount - a.amount);
+  }, [expenses]);
+
+  const totalAmount = React.useMemo(() => data.reduce((sum, d) => sum + d.amount, 0), [data]);
+  const totalTax = React.useMemo(() => data.reduce((sum, d) => sum + d.tax, 0), [data]);
+  const activeItem = activeIndex !== null ? data[activeIndex] : null;
+  const topCategory = data.length > 0 ? data[0] : null;
+
+  if (expenses.length === 0 || totalAmount === 0) {
+    return (
+      <div className="bg-purple-50/30 border border-purple-100 rounded-3xl p-8 text-center space-y-3">
+        <div className="w-12 h-12 rounded-2xl bg-purple-100 text-purple-900 mx-auto flex items-center justify-center">
+          <PieChartIcon size={24} />
+        </div>
+        <h4 className="text-base font-bold text-hayat-navy">لا توجد مصاريف مسجلة في هذه الفترة</h4>
+        <p className="text-xs text-slate-400 max-w-sm mx-auto">قم بإضافة مصاريف أو تغيير نطاق الفترة الزمنية لعرض المخطط البياني الدائري التفاعلي.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-3xl border border-indigo-100/80 p-6 md:p-8 shadow-hayat space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-5 border-b border-slate-100">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-purple-600"></span>
+            <h3 className="text-lg font-bold text-hayat-navy">{title}</h3>
+          </div>
+          {subtitle && <p className="text-xs font-semibold text-slate-400 mt-1">{subtitle}</p>}
+        </div>
+
+        <div className="flex items-center gap-2 bg-purple-50/60 border border-purple-100 px-3.5 py-1.5 rounded-xl">
+          <span className="text-[10px] font-black text-purple-900 uppercase">إجمالي النفقات:</span>
+          <span className="text-sm font-serif font-black text-purple-950 tabular-nums">
+            {totalAmount.toLocaleString()} <span className="text-[10px] font-sans font-normal">ريال</span>
+          </span>
+        </div>
+      </div>
+
+      {/* KPI highlight pills */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="bg-purple-50/40 border border-purple-100/60 p-3.5 rounded-2xl">
+          <span className="text-[10px] font-black text-purple-800 uppercase tracking-wider block mb-1">أعلى فئة استهلاك</span>
+          <p className="text-xs font-bold text-slate-800 truncate">{topCategory?.name || '-'}</p>
+          <span className="text-[10px] font-black text-emerald-700 block mt-0.5">{topCategory?.percentage.toFixed(1)}% من الإجمالي</span>
+        </div>
+
+        <div className="bg-emerald-50/40 border border-emerald-100/60 p-3.5 rounded-2xl">
+          <span className="text-[10px] font-black text-emerald-800 uppercase tracking-wider block mb-1">عدد الفئات النشطة</span>
+          <p className="text-base font-serif font-black text-emerald-950 tabular-nums">{data.length} <span className="text-[10px] font-sans font-bold">فئات</span></p>
+          <span className="text-[10px] font-semibold text-slate-400 block mt-0.5">{expenses.length} عملية مسجلة</span>
+        </div>
+
+        <div className="bg-blue-50/40 border border-blue-100/60 p-3.5 rounded-2xl">
+          <span className="text-[10px] font-black text-blue-800 uppercase tracking-wider block mb-1">متوسط العملية</span>
+          <p className="text-base font-serif font-black text-blue-950 tabular-nums">
+            {expenses.length > 0 ? Math.round(totalAmount / expenses.length).toLocaleString() : 0} <span className="text-[10px] font-sans font-bold">ريال</span>
+          </p>
+          <span className="text-[10px] font-semibold text-slate-400 block mt-0.5">لكل فاتورة / سند</span>
+        </div>
+
+        {settings?.isTaxRegistered ? (
+          <div className="bg-rose-50/40 border border-rose-100/60 p-3.5 rounded-2xl">
+            <span className="text-[10px] font-black text-rose-800 uppercase tracking-wider block mb-1">الضريبة المدخلة (VAT)</span>
+            <p className="text-base font-serif font-black text-rose-950 tabular-nums">{totalTax.toLocaleString()} <span className="text-[10px] font-sans font-bold">ريال</span></p>
+            <span className="text-[10px] font-semibold text-slate-400 block mt-0.5">مستردة للإقرار</span>
+          </div>
+        ) : (
+          <div className="bg-slate-50 border border-slate-100 p-3.5 rounded-2xl">
+            <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider block mb-1">طريقة العرض</span>
+            <p className="text-xs font-bold text-slate-700">مخطط دائري تفاعلي</p>
+            <span className="text-[10px] font-semibold text-purple-700 block mt-0.5">حرك المؤشر للتفاصيل</span>
+          </div>
+        )}
+      </div>
+
+      {/* Main Chart + Interactive Categories split */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center pt-2">
+        {/* Donut Pie Chart with Centered Dynamic Info */}
+        <div className="lg:col-span-5 relative flex items-center justify-center min-h-[300px]">
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Tooltip 
+                content={({ active, payload }: any) => {
+                  if (active && payload && payload.length) {
+                    const item = payload[0].payload;
+                    return (
+                      <div className="bg-white/95 backdrop-blur-md p-3.5 rounded-2xl shadow-xl border border-indigo-100 text-right space-y-1 z-50">
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+                          <span className="text-xs font-bold text-slate-800">{item.name}</span>
+                        </div>
+                        <div className="text-base font-serif font-black text-purple-950">
+                          {item.amount.toLocaleString()} <span className="text-xs font-sans">ريال</span>
+                        </div>
+                        <div className="flex items-center justify-between gap-4 text-[10px] text-slate-400 font-bold border-t border-slate-100 pt-1">
+                          <span>النسبة: {item.percentage.toFixed(1)}%</span>
+                          <span>{item.count} سندات</span>
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                }}
+              />
+              <Pie
+                data={data}
+                cx="50%"
+                cy="50%"
+                innerRadius={68}
+                outerRadius={105}
+                paddingAngle={3}
+                dataKey="amount"
+                nameKey="name"
+                onMouseEnter={(_, index) => setActiveIndex(index)}
+                onMouseLeave={() => setActiveIndex(null)}
+              >
+                {data.map((entry, index) => (
+                  <Cell 
+                    key={`cell-${index}`} 
+                    fill={entry.color} 
+                    stroke="#ffffff"
+                    strokeWidth={activeIndex === index ? 3 : 1.5}
+                    style={{
+                      cursor: 'pointer',
+                      outline: 'none',
+                      transition: 'all 0.2s ease-in-out',
+                      filter: activeIndex === index ? 'drop-shadow(0 4px 8px rgba(0,0,0,0.2))' : 'none'
+                    }}
+                  />
+                ))}
+              </Pie>
+            </PieChart>
+          </ResponsiveContainer>
+
+          {/* Central Donut Floating Metrics */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-4">
+            {activeItem ? (
+              <motion.div 
+                key={`active-${activeItem.category}`}
+                initial={{ scale: 0.85, opacity: 0 }} 
+                animate={{ scale: 1, opacity: 1 }} 
+                className="space-y-0.5"
+              >
+                <span className="text-[10px] font-bold text-slate-400 block truncate max-w-[120px]">{activeItem.name}</span>
+                <span className="text-lg font-serif font-black text-purple-950 block leading-tight">
+                  {activeItem.amount.toLocaleString()} <span className="text-[10px] font-sans font-bold">ريال</span>
+                </span>
+                <span 
+                  className="text-[10px] font-black px-2 py-0.5 rounded-full inline-block"
+                  style={{ backgroundColor: `${activeItem.color}20`, color: activeItem.color }}
+                >
+                  {activeItem.percentage.toFixed(1)}%
+                </span>
+              </motion.div>
+            ) : (
+              <motion.div 
+                key="idle"
+                initial={{ scale: 0.85, opacity: 0 }} 
+                animate={{ scale: 1, opacity: 1 }} 
+                className="space-y-0.5"
+              >
+                <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 block">إجمالي النفقات</span>
+                <span className="text-base font-serif font-black text-purple-950 block leading-tight">
+                  {totalAmount.toLocaleString()} <span className="text-[9px] font-sans font-bold">ريال</span>
+                </span>
+                <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full inline-block">
+                  {data.length} فئات نشطة
+                </span>
+              </motion.div>
+            )}
+          </div>
+        </div>
+
+        {/* Categories Interactive Breakdown List */}
+        <div className="lg:col-span-7 space-y-2.5">
+          <div className="flex justify-between items-center text-[10px] font-black uppercase text-slate-400 tracking-wider pb-1 px-1">
+            <span>الفئة وعدد السندات</span>
+            <span>القيمة والنسبة المئوية</span>
+          </div>
+
+          <div className="space-y-2 max-h-[320px] overflow-y-auto pr-1">
+            {data.map((item, idx) => (
+              <div 
+                key={item.category}
+                onMouseEnter={() => setActiveIndex(idx)}
+                onMouseLeave={() => setActiveIndex(null)}
+                className={`p-3 rounded-2xl border transition-all cursor-pointer ${
+                  activeIndex === idx 
+                    ? 'bg-purple-50/80 border-purple-300 shadow-sm translate-x-[-2px]' 
+                    : 'bg-white hover:bg-slate-50 border-slate-100'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1.5">
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }} />
+                    <span className="text-xs font-bold text-slate-800">{item.name}</span>
+                    <span className="text-[10px] font-semibold text-slate-400">({item.count} سند)</span>
+                  </div>
+                  <div className="flex items-center gap-2 font-serif">
+                    <span className="text-sm font-black text-purple-950">
+                      {item.amount.toLocaleString()} <span className="text-[10px] font-sans font-bold text-slate-400">ريال</span>
+                    </span>
+                    <span 
+                      className="text-[10px] font-black px-2 py-0.5 rounded-full" 
+                      style={{ backgroundColor: `${item.color}15`, color: item.color }}
+                    >
+                      {item.percentage.toFixed(1)}%
+                    </span>
+                  </div>
+                </div>
+
+                {/* Progress bar */}
+                <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full rounded-full transition-all duration-500" 
+                    style={{ width: `${Math.max(item.percentage, 2)}%`, backgroundColor: item.color }} 
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- Revenue / Sales Product Pie Chart Analysis Component ---
+
+const REVENUE_PRODUCT_COLORS: Record<string, string> = {
+  acrylic: '#5B21B6',   // Royal Violet
+  wood: '#059669',      // Emerald Green
+  svg: '#D97706',       // Amber Gold
+  other: '#2563EB',     // Royal Blue
+};
+
+const REVENUE_FALLBACK_COLORS = [
+  '#059669', '#5B21B6', '#D97706', '#2563EB', '#EC4899', 
+  '#06B6D4', '#8B5CF6', '#10B981', '#F97316', '#6366F1'
+];
+
+interface RevenuePieChartAnalysisProps {
+  revenues: Revenue[];
+  title?: string;
+  subtitle?: string;
+  settings?: any;
+  compact?: boolean;
+}
+
+function RevenuePieChartAnalysis({
+  revenues,
+  title = "تحليل وتوزيع المبيعات حسب نوع المنتج",
+  subtitle = "مخطط بياني دائري تفاعلي لعرض نسب المبيعات وحصص المنتجات الأكثر ربحية",
+  settings,
+  compact = false
+}: RevenuePieChartAnalysisProps) {
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+
+  // Group and calculate statistics
+  const data = React.useMemo(() => {
+    const map: Record<string, { productType: string; name: string; amount: number; count: number; tax: number }> = {};
+    revenues.forEach(r => {
+      const pType = r.productType || 'other';
+      if (!map[pType]) {
+        map[pType] = {
+          productType: pType,
+          name: translateProduct(pType),
+          amount: 0,
+          count: 0,
+          tax: 0
+        };
+      }
+      map[pType].amount += (r.amount || 0);
+      map[pType].count += 1;
+      map[pType].tax += (r.taxAmount || 0);
+    });
+
+    const total = Object.values(map).reduce((sum, item) => sum + item.amount, 0);
+
+    return Object.values(map)
+      .map((item, idx) => ({
+        ...item,
+        percentage: total > 0 ? (item.amount / total) * 100 : 0,
+        color: REVENUE_PRODUCT_COLORS[item.productType] || REVENUE_FALLBACK_COLORS[idx % REVENUE_FALLBACK_COLORS.length]
+      }))
+      .sort((a, b) => b.amount - a.amount);
+  }, [revenues]);
+
+  const totalAmount = React.useMemo(() => data.reduce((sum, d) => sum + d.amount, 0), [data]);
+  const totalTax = React.useMemo(() => data.reduce((sum, d) => sum + d.tax, 0), [data]);
+  const activeItem = activeIndex !== null ? data[activeIndex] : null;
+  const topProduct = data.length > 0 ? data[0] : null;
+
+  if (revenues.length === 0 || totalAmount === 0) {
+    return (
+      <div className="bg-emerald-50/30 border border-emerald-100 rounded-3xl p-8 text-center space-y-3">
+        <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-800 mx-auto flex items-center justify-center">
+          <PieChartIcon size={24} />
+        </div>
+        <h4 className="text-base font-bold text-hayat-navy">لا توجد مبيعات مسجلة في هذه الفترة</h4>
+        <p className="text-xs text-slate-400 max-w-sm mx-auto">قم بإضافة مبيعات أو تغيير نطاق الفترة الزمنية لعرض المخطط البياني الدائري التفاعلي.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-3xl border border-emerald-100/80 p-6 md:p-8 shadow-hayat space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-5 border-b border-slate-100">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-600"></span>
+            <h3 className="text-lg font-bold text-hayat-navy">{title}</h3>
+          </div>
+          {subtitle && <p className="text-xs font-semibold text-slate-400 mt-1">{subtitle}</p>}
+        </div>
+
+        <div className="flex items-center gap-2 bg-emerald-50/60 border border-emerald-100 px-3.5 py-1.5 rounded-xl">
+          <span className="text-[10px] font-black text-emerald-900 uppercase">إجمالي المبيعات:</span>
+          <span className="text-sm font-serif font-black text-emerald-950 tabular-nums">
+            {totalAmount.toLocaleString()} <span className="text-[10px] font-sans font-normal">ريال</span>
+          </span>
+        </div>
+      </div>
+
+      {/* KPI highlight pills */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="bg-emerald-50/40 border border-emerald-100/60 p-3.5 rounded-2xl">
+          <span className="text-[10px] font-black text-emerald-800 uppercase tracking-wider block mb-1">المنتج الأكثر مبيعاً</span>
+          <p className="text-xs font-bold text-slate-800 truncate">{topProduct?.name || '-'}</p>
+          <span className="text-[10px] font-black text-purple-700 block mt-0.5">{topProduct?.percentage.toFixed(1)}% من الإجمالي</span>
+        </div>
+
+        <div className="bg-purple-50/40 border border-purple-100/60 p-3.5 rounded-2xl">
+          <span className="text-[10px] font-black text-purple-800 uppercase tracking-wider block mb-1">أنواع المنتجات</span>
+          <p className="text-base font-serif font-black text-purple-950 tabular-nums">{data.length} <span className="text-[10px] font-sans font-bold">منتجات</span></p>
+          <span className="text-[10px] font-semibold text-slate-400 block mt-0.5">{revenues.length} طلبات مكتملة</span>
+        </div>
+
+        <div className="bg-blue-50/40 border border-blue-100/60 p-3.5 rounded-2xl">
+          <span className="text-[10px] font-black text-blue-800 uppercase tracking-wider block mb-1">متوسط قيمة الطلب</span>
+          <p className="text-base font-serif font-black text-blue-950 tabular-nums">
+            {revenues.length > 0 ? Math.round(totalAmount / revenues.length).toLocaleString() : 0} <span className="text-[10px] font-sans font-bold">ريال</span>
+          </p>
+          <span className="text-[10px] font-semibold text-slate-400 block mt-0.5">لكل فاتورة / طلب</span>
+        </div>
+
+        {settings?.isTaxRegistered ? (
+          <div className="bg-amber-50/40 border border-amber-100/60 p-3.5 rounded-2xl">
+            <span className="text-[10px] font-black text-amber-800 uppercase tracking-wider block mb-1">ضريبة المبيعات (VAT)</span>
+            <p className="text-base font-serif font-black text-amber-950 tabular-nums">{totalTax.toLocaleString()} <span className="text-[10px] font-sans font-bold">ريال</span></p>
+            <span className="text-[10px] font-semibold text-slate-400 block mt-0.5">محصلة من العملاء</span>
+          </div>
+        ) : (
+          <div className="bg-slate-50 border border-slate-100 p-3.5 rounded-2xl">
+            <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider block mb-1">طريقة العرض</span>
+            <p className="text-xs font-bold text-slate-700">مخطط دائري تفاعلي</p>
+            <span className="text-[10px] font-semibold text-emerald-700 block mt-0.5">حرك المؤشر للتفاصيل</span>
+          </div>
+        )}
+      </div>
+
+      {/* Main Chart + Interactive Categories split */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center pt-2">
+        {/* Donut Pie Chart with Centered Dynamic Info */}
+        <div className="lg:col-span-5 relative flex items-center justify-center min-h-[300px]">
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Tooltip 
+                content={({ active, payload }: any) => {
+                  if (active && payload && payload.length) {
+                    const item = payload[0].payload;
+                    return (
+                      <div className="bg-white/95 backdrop-blur-md p-3.5 rounded-2xl shadow-xl border border-emerald-100 text-right space-y-1 z-50">
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+                          <span className="text-xs font-bold text-slate-800">{item.name}</span>
+                        </div>
+                        <div className="text-base font-serif font-black text-emerald-950">
+                          {item.amount.toLocaleString()} <span className="text-xs font-sans">ريال</span>
+                        </div>
+                        <div className="flex items-center justify-between gap-4 text-[10px] text-slate-400 font-bold border-t border-slate-100 pt-1">
+                          <span>النسبة: {item.percentage.toFixed(1)}%</span>
+                          <span>{item.count} طلبات</span>
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                }}
+              />
+              <Pie
+                data={data}
+                cx="50%"
+                cy="50%"
+                innerRadius={68}
+                outerRadius={105}
+                paddingAngle={3}
+                dataKey="amount"
+                nameKey="name"
+                onMouseEnter={(_, index) => setActiveIndex(index)}
+                onMouseLeave={() => setActiveIndex(null)}
+              >
+                {data.map((entry, index) => (
+                  <Cell 
+                    key={`cell-${index}`} 
+                    fill={entry.color} 
+                    stroke="#ffffff"
+                    strokeWidth={activeIndex === index ? 3 : 1.5}
+                    style={{
+                      cursor: 'pointer',
+                      outline: 'none',
+                      transition: 'all 0.2s ease-in-out',
+                      filter: activeIndex === index ? 'drop-shadow(0 4px 8px rgba(0,0,0,0.2))' : 'none'
+                    }}
+                  />
+                ))}
+              </Pie>
+            </PieChart>
+          </ResponsiveContainer>
+
+          {/* Central Donut Floating Metrics */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-4">
+            {activeItem ? (
+              <motion.div 
+                key={`active-${activeItem.productType}`}
+                initial={{ scale: 0.85, opacity: 0 }} 
+                animate={{ scale: 1, opacity: 1 }} 
+                className="space-y-0.5"
+              >
+                <span className="text-[10px] font-bold text-slate-400 block truncate max-w-[120px]">{activeItem.name}</span>
+                <span className="text-lg font-serif font-black text-emerald-950 block leading-tight">
+                  {activeItem.amount.toLocaleString()} <span className="text-[10px] font-sans font-bold">ريال</span>
+                </span>
+                <span 
+                  className="text-[10px] font-black px-2 py-0.5 rounded-full inline-block"
+                  style={{ backgroundColor: `${activeItem.color}20`, color: activeItem.color }}
+                >
+                  {activeItem.percentage.toFixed(1)}%
+                </span>
+              </motion.div>
+            ) : (
+              <motion.div 
+                key="idle"
+                initial={{ scale: 0.85, opacity: 0 }} 
+                animate={{ scale: 1, opacity: 1 }} 
+                className="space-y-0.5"
+              >
+                <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 block">إجمالي المبيعات</span>
+                <span className="text-base font-serif font-black text-emerald-950 block leading-tight">
+                  {totalAmount.toLocaleString()} <span className="text-[9px] font-sans font-bold">ريال</span>
+                </span>
+                <span className="text-[9px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full inline-block">
+                  {data.length} منتجات نشطة
+                </span>
+              </motion.div>
+            )}
+          </div>
+        </div>
+
+        {/* Products Interactive Breakdown List */}
+        <div className="lg:col-span-7 space-y-2.5">
+          <div className="flex justify-between items-center text-[10px] font-black uppercase text-slate-400 tracking-wider pb-1 px-1">
+            <span>نوع المنتج وعدد الطلبات</span>
+            <span>القيمة والنسبة المئوية</span>
+          </div>
+
+          <div className="space-y-2 max-h-[320px] overflow-y-auto pr-1">
+            {data.map((item, idx) => (
+              <div 
+                key={item.productType}
+                onMouseEnter={() => setActiveIndex(idx)}
+                onMouseLeave={() => setActiveIndex(null)}
+                className={`p-3 rounded-2xl border transition-all cursor-pointer ${
+                  activeIndex === idx 
+                    ? 'bg-emerald-50/80 border-emerald-300 shadow-sm translate-x-[-2px]' 
+                    : 'bg-white hover:bg-slate-50 border-slate-100'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1.5">
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }} />
+                    <span className="text-xs font-bold text-slate-800">{item.name}</span>
+                    <span className="text-[10px] font-semibold text-slate-400">({item.count} طلب)</span>
+                  </div>
+                  <div className="flex items-center gap-2 font-serif">
+                    <span className="text-sm font-black text-emerald-950">
+                      {item.amount.toLocaleString()} <span className="text-[10px] font-sans font-bold text-slate-400">ريال</span>
+                    </span>
+                    <span 
+                      className="text-[10px] font-black px-2 py-0.5 rounded-full" 
+                      style={{ backgroundColor: `${item.color}15`, color: item.color }}
+                    >
+                      {item.percentage.toFixed(1)}%
+                    </span>
+                  </div>
+                </div>
+
+                {/* Progress bar */}
+                <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full rounded-full transition-all duration-500" 
+                    style={{ width: `${Math.max(item.percentage, 2)}%`, backgroundColor: item.color }} 
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // --- Reports Section ---
 
 function ReportsView({ expenses, revenues, budgets, waste = [], setActiveTab, settings }: { expenses: Expense[], revenues: Revenue[], budgets: BudgetTarget[], waste?: WasteItem[], setActiveTab: (tab: any) => void, settings: any }) {
-  const [viewMode, setViewMode] = useState<'pl' | 'chart' | 'table'>('pl');
+  const [viewMode, setViewMode] = useState<'pl' | 'revenue_analysis' | 'expense_analysis' | 'chart' | 'table'>('pl');
   const [chartType, setChartType] = useState<'bar' | 'line'>('bar');
   const reportsRef = useRef<HTMLDivElement>(null);
 
-  const navyColor = '#0A1E31';
-  const woodColor = '#A16207';
+  const navyColor = '#2E1065';
+  const woodColor = '#059669';
+  const purpleColor = '#6D28D9';
 
   // Date states for Profit & Loss and general filtering
   const [dateFrom, setDateFrom] = useState(() => {
@@ -1397,32 +1986,39 @@ function ReportsView({ expenses, revenues, budgets, waste = [], setActiveTab, se
     setDateTo('');
   };
 
-  // Profit & Loss calculation based on the custom date range
-  const plData = React.useMemo(() => {
-    const filteredRevenues = revenues.filter(r => {
+  // Filtered dataset hooks based on custom date range
+  const filteredRevenues = React.useMemo(() => {
+    return revenues.filter(r => {
       if (!r.date) return false;
       const dStr = r.date.split('T')[0];
       if (dateFrom && dStr < dateFrom) return false;
       if (dateTo && dStr > dateTo) return false;
       return true;
     });
+  }, [revenues, dateFrom, dateTo]);
 
-    const filteredExpenses = expenses.filter(e => {
+  const filteredExpenses = React.useMemo(() => {
+    return expenses.filter(e => {
       if (!e.date) return false;
       const dStr = e.date.split('T')[0];
       if (dateFrom && dStr < dateFrom) return false;
       if (dateTo && dStr > dateTo) return false;
       return true;
     });
+  }, [expenses, dateFrom, dateTo]);
 
-    const filteredWaste = waste.filter(w => {
+  const filteredWaste = React.useMemo(() => {
+    return waste.filter(w => {
       if (!w.date) return false;
       const dStr = w.date.split('T')[0];
       if (dateFrom && dStr < dateFrom) return false;
       if (dateTo && dStr > dateTo) return false;
       return true;
     });
+  }, [waste, dateFrom, dateTo]);
 
+  // Profit & Loss calculation based on the custom date range
+  const plData = React.useMemo(() => {
     const totalRevenue = filteredRevenues.reduce((sum, r) => sum + r.amount, 0);
     const totalExpenses = filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
     const totalWaste = filteredWaste.reduce((sum, w) => sum + w.estimatedCost, 0);
@@ -1477,7 +2073,7 @@ function ReportsView({ expenses, revenues, budgets, waste = [], setActiveTab, se
       expensesCount: filteredExpenses.length,
       wasteCount: filteredWaste.length
     };
-  }, [revenues, expenses, waste, dateFrom, dateTo]);
+  }, [filteredRevenues, filteredExpenses, filteredWaste]);
 
   // Aggregate data by month for standard trend views
   const monthlyData = React.useMemo(() => {
@@ -1596,19 +2192,33 @@ function ReportsView({ expenses, revenues, budgets, waste = [], setActiveTab, se
         <div className="flex bg-white p-1 rounded-2xl shadow-hayat border border-hayat-border/40 overflow-x-auto w-full md:w-auto">
            <button 
             onClick={() => setViewMode('pl')}
-            className={`px-5 py-2.5 rounded-xl text-[10px] whitespace-nowrap font-black uppercase tracking-widest transition-all ${viewMode === 'pl' ? 'bg-hayat-navy text-white shadow-md' : 'text-slate-400 hover:bg-slate-50'}`}
+            className={`px-4 sm:px-5 py-2.5 rounded-xl text-[10px] whitespace-nowrap font-black uppercase tracking-widest transition-all ${viewMode === 'pl' ? 'bg-hayat-navy text-white shadow-md' : 'text-slate-400 hover:bg-slate-50'}`}
            >
              الأرباح والخسائر
            </button>
            <button 
+            onClick={() => setViewMode('revenue_analysis')}
+            className={`px-4 sm:px-5 py-2.5 rounded-xl text-[10px] whitespace-nowrap font-black uppercase tracking-widest transition-all flex items-center gap-1.5 ${viewMode === 'revenue_analysis' ? 'bg-emerald-800 text-white shadow-md' : 'text-slate-400 hover:bg-slate-50'}`}
+           >
+             <PieChartIcon size={13} className={viewMode === 'revenue_analysis' ? 'text-emerald-200' : 'text-emerald-600'} />
+             <span>تحليل المبيعات</span>
+           </button>
+           <button 
+            onClick={() => setViewMode('expense_analysis')}
+            className={`px-4 sm:px-5 py-2.5 rounded-xl text-[10px] whitespace-nowrap font-black uppercase tracking-widest transition-all flex items-center gap-1.5 ${viewMode === 'expense_analysis' ? 'bg-purple-900 text-white shadow-md' : 'text-slate-400 hover:bg-slate-50'}`}
+           >
+             <PieChartIcon size={13} className={viewMode === 'expense_analysis' ? 'text-purple-200' : 'text-purple-600'} />
+             <span>تحليل المصاريف</span>
+           </button>
+           <button 
             onClick={() => setViewMode('chart')}
-            className={`px-5 py-2.5 rounded-xl text-[10px] whitespace-nowrap font-black uppercase tracking-widest transition-all ${viewMode === 'chart' ? 'bg-hayat-navy text-white shadow-md' : 'text-slate-400 hover:bg-slate-50'}`}
+            className={`px-4 sm:px-5 py-2.5 rounded-xl text-[10px] whitespace-nowrap font-black uppercase tracking-widest transition-all ${viewMode === 'chart' ? 'bg-hayat-navy text-white shadow-md' : 'text-slate-400 hover:bg-slate-50'}`}
            >
              الاتجاهات والرسوم
            </button>
            <button 
             onClick={() => setViewMode('table')}
-            className={`px-5 py-2.5 rounded-xl text-[10px] whitespace-nowrap font-black uppercase tracking-widest transition-all ${viewMode === 'table' ? 'bg-hayat-navy text-white shadow-md' : 'text-slate-400 hover:bg-slate-50'}`}
+            className={`px-4 sm:px-5 py-2.5 rounded-xl text-[10px] whitespace-nowrap font-black uppercase tracking-widest transition-all ${viewMode === 'table' ? 'bg-hayat-navy text-white shadow-md' : 'text-slate-400 hover:bg-slate-50'}`}
            >
              الجداول التفصيلية
            </button>
@@ -1741,12 +2351,12 @@ function ReportsView({ expenses, revenues, budgets, waste = [], setActiveTab, se
                 <span className="text-[10px] text-slate-400 block font-bold">{plData.wasteCount} تالف مواد / عيوب مصنعية</span>
               </div>
 
-              <div className={`p-6 border rounded-3xl text-right space-y-2 ${plData.netProfit >= 0 ? 'bg-amber-50/80 border-hayat-border/80' : 'bg-red-50 border-red-200'}`}>
+              <div className={`p-6 border rounded-3xl text-right space-y-2 ${plData.netProfit >= 0 ? 'bg-purple-50/70 border-purple-100' : 'bg-red-50 border-red-200'}`}>
                 <span className="text-[10px] font-black uppercase tracking-widest block" style={{ color: plData.netProfit >= 0 ? navyColor : '#B91C1C' }}>صافي الأرباح بالفترة</span>
                 <p className="text-2xl font-serif font-black tabular-nums" style={{ color: plData.netProfit >= 0 ? navyColor : '#911F1F' }}>
                   {plData.netProfit.toLocaleString()} <span className="text-xs font-sans">ريال</span>
                 </p>
-                <span className={`text-[10px] block font-black ${plData.netProfit >= 0 ? 'text-amber-800' : 'text-red-600'}`}>
+                <span className={`text-[10px] block font-black ${plData.netProfit >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>
                   هامش مبيعات ناصع {Math.round(plData.netMargin)}%
                 </span>
               </div>
@@ -1756,9 +2366,9 @@ function ReportsView({ expenses, revenues, budgets, waste = [], setActiveTab, se
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 pt-4">
               {/* OPERATING REVENUES breakdown */}
               <div className="space-y-4">
-                <div className="flex justify-between items-center border-b-2 border-emerald-300 pb-3">
-                  <span className="text-sm font-black text-emerald-800">1. الإيرادات التشغيلية المباشرة</span>
-                  <span className="text-[9px] font-black text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full uppercase">Inflow Channels</span>
+                <div className="flex justify-between items-center border-b-2 border-emerald-400 pb-3">
+                  <span className="text-sm font-black text-emerald-900">1. الإيرادات التشغيلية المباشرة</span>
+                  <span className="text-[9px] font-black text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full uppercase">Inflow Channels</span>
                 </div>
                 
                 <div className="divide-y divide-slate-100 text-xs font-bold text-slate-600">
@@ -1864,19 +2474,19 @@ function ReportsView({ expenses, revenues, budgets, waste = [], setActiveTab, se
             </div>
 
             {/* Final bottom audit total */}
-            <div className="border-t-4 border-double border-hayat-navy/40 pt-6 mt-10">
-              <div className="bg-hayat-navy text-white rounded-3xl p-6 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div className="border-t-4 border-double border-purple-900/30 pt-6 mt-10">
+              <div className="bg-purple-950 text-white rounded-3xl p-6 flex flex-col md:flex-row justify-between items-center gap-6 shadow-xl shadow-purple-950/10">
                 <div className="space-y-1 text-center md:text-right">
-                  <span className="text-[10px] font-black tracking-widest text-[#EADEC9] uppercase block mb-1">صافي نتيجة الأعمال للفترة م ل</span>
+                  <span className="text-[10px] font-black tracking-widest text-emerald-300 uppercase block mb-1">صافي نتيجة الأعمال للفترة م ل</span>
                   <h4 className="text-lg font-black font-serif">نتيجة الأرباح أو الخسائر الصافية للفترة المحددة</h4>
                 </div>
                 
                 <div className="text-center md:text-left font-serif">
-                  <p className="text-4xl font-black text-[#EADEC9] tabular-nums leading-none">
+                  <p className="text-4xl font-black text-emerald-300 tabular-nums leading-none">
                     {plData.netProfit.toLocaleString()} <span className="text-base font-sans font-bold">ريال</span>
                   </p>
-                  <p className="text-xs text-white/70 mt-2 font-sans font-bold">
-                    صافي هامش مبيعاتك: <span className="text-[#EADEC9] font-black">{Math.round(plData.netMargin)}%</span> • معامل هدر الإيراد: <span className="text-[#EADEC9] font-black">{Math.round(plData.wasteRatio)}%</span>
+                  <p className="text-xs text-white/80 mt-2 font-sans font-bold">
+                    صافي هامش مبيعاتك: <span className="text-emerald-300 font-black">{Math.round(plData.netMargin)}%</span> • معامل هدر الإيراد: <span className="text-purple-200 font-black">{Math.round(plData.wasteRatio)}%</span>
                   </p>
                 </div>
               </div>
@@ -1894,20 +2504,38 @@ function ReportsView({ expenses, revenues, budgets, waste = [], setActiveTab, se
               </div>
             </div>
           </div>
+        ) : viewMode === 'revenue_analysis' ? (
+          <div className="w-full space-y-6">
+            <RevenuePieChartAnalysis 
+              revenues={filteredRevenues} 
+              settings={settings}
+              title="تحليل وتوزيع المبيعات حسب نوع المنتج (Pie Chart)"
+              subtitle="مخطط بياني دائري تفاعلي وتحليل لحصص المبيعات والمنتجات الأكثر طلباً في الفترة المحددة"
+            />
+          </div>
+        ) : viewMode === 'expense_analysis' ? (
+          <div className="w-full space-y-6">
+            <ExpensePieChartAnalysis 
+              expenses={filteredExpenses} 
+              settings={settings}
+              title="تحليل وتوزيع المصاريف حسب الفئات (Pie Chart)"
+              subtitle="مخطط بياني دائري تفاعلي وتحليل كمي ونسب استهلاك الميزانية بحسب النطاق الزمني المحدد"
+            />
+          </div>
         ) : viewMode === 'chart' ? (
           <div className="w-full space-y-10">
-            <div className="flex justify-between items-center bg-hayat-accent/20 p-4 rounded-2xl">
+            <div className="flex justify-between items-center bg-purple-50/50 p-4 rounded-2xl border border-purple-100">
                <h4 className="text-sm font-bold text-hayat-navy">تحليل المبيعات والمصاريف الشهرية</h4>
                <div className="flex gap-2">
                   <button 
                     onClick={() => setChartType('bar')}
-                    className={`p-2 rounded-lg transition-all ${chartType === 'bar' ? 'bg-hayat-wood text-white shadow-sm' : 'bg-white text-slate-300'}`}
+                    className={`p-2 rounded-lg transition-all ${chartType === 'bar' ? 'bg-purple-900 text-white shadow-sm' : 'bg-white text-slate-400'}`}
                   >
                     <LayoutDashboard size={16} />
                   </button>
                   <button 
                     onClick={() => setChartType('line')}
-                    className={`p-2 rounded-lg transition-all ${chartType === 'line' ? 'bg-hayat-wood text-white shadow-sm' : 'bg-white text-slate-300'}`}
+                    className={`p-2 rounded-lg transition-all ${chartType === 'line' ? 'bg-purple-900 text-white shadow-sm' : 'bg-white text-slate-400'}`}
                   >
                     <TrendingUp size={16} />
                   </button>
@@ -1919,38 +2547,54 @@ function ReportsView({ expenses, revenues, budgets, waste = [], setActiveTab, se
                 {chartType === 'bar' ? (
                   <BarChart data={monthlyData} barGap={8}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                    <XAxis dataKey="formattedMonth" fontSize={10} fontWeight={700} tick={{ fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                    <YAxis fontSize={10} fontWeight={700} tick={{ fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                    <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.05)' }} />
+                    <XAxis dataKey="formattedMonth" fontSize={10} fontWeight={700} tick={{ fill: '#64748b' }} axisLine={false} tickLine={false} />
+                    <YAxis fontSize={10} fontWeight={700} tick={{ fill: '#64748b' }} axisLine={false} tickLine={false} />
+                    <Tooltip contentStyle={{ borderRadius: '16px', border: '1px solid #e0e7ff', boxShadow: '0 10px 15px -3px rgba(91,33,182,0.05)' }} />
                     <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px', fontWeight: 'bold', fontSize: '10px' }} />
-                    <Bar name="إجمالي المبيعات" dataKey="revenue" fill="#10B981" radius={[4, 4, 0, 0]} barSize={34} />
-                    <Bar name="إجمالي المصاريف" dataKey="expense" fill="#F43F5E" radius={[4, 4, 0, 0]} barSize={34} />
+                    <Bar name="إجمالي المبيعات" dataKey="revenue" fill="#059669" radius={[4, 4, 0, 0]} barSize={34} />
+                    <Bar name="إجمالي المصاريف" dataKey="expense" fill="#E11D48" radius={[4, 4, 0, 0]} barSize={34} />
                   </BarChart>
                 ) : (
                   <AreaChart data={monthlyData}>
                     <defs>
                       <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10B981" stopOpacity={0.1}/>
-                        <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
+                        <stop offset="5%" stopColor="#059669" stopOpacity={0.15}/>
+                        <stop offset="95%" stopColor="#059669" stopOpacity={0}/>
                       </linearGradient>
                       <linearGradient id="expenseGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#F43F5E" stopOpacity={0.1}/>
-                        <stop offset="95%" stopColor="#F43F5E" stopOpacity={0}/>
+                        <stop offset="5%" stopColor="#E11D48" stopOpacity={0.15}/>
+                        <stop offset="95%" stopColor="#E11D48" stopOpacity={0}/>
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                    <XAxis dataKey="formattedMonth" fontSize={10} fontWeight={700} tick={{ fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                    <YAxis fontSize={10} fontWeight={700} tick={{ fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                    <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.05)' }} />
+                    <XAxis dataKey="formattedMonth" fontSize={10} fontWeight={700} tick={{ fill: '#64748b' }} axisLine={false} tickLine={false} />
+                    <YAxis fontSize={10} fontWeight={700} tick={{ fill: '#64748b' }} axisLine={false} tickLine={false} />
+                    <Tooltip contentStyle={{ borderRadius: '16px', border: '1px solid #e0e7ff', boxShadow: '0 10px 15px -3px rgba(91,33,182,0.05)' }} />
                     <Legend wrapperStyle={{ paddingTop: '20px', fontWeight: 'bold', fontSize: '10px' }} />
-                    <Area type="monotone" name="المبيعات" dataKey="revenue" stroke="#10B981" strokeWidth={3} fill="url(#revenueGrad)" />
-                    <Area type="monotone" name="المصاريف" dataKey="expense" stroke="#F43F5E" strokeWidth={3} fill="url(#expenseGrad)" />
+                    <Area type="monotone" name="المبيعات" dataKey="revenue" stroke="#059669" strokeWidth={3} fill="url(#revenueGrad)" />
+                    <Area type="monotone" name="المصاريف" dataKey="expense" stroke="#E11D48" strokeWidth={3} fill="url(#expenseGrad)" />
                   </AreaChart>
                 )}
               </ResponsiveContainer>
             </div>
+
+            {/* Visual Sales & Expense Breakdown Pie Charts in Charts mode */}
+            <div className="grid grid-cols-1 gap-8 pt-6 border-t border-indigo-100/60">
+              <RevenuePieChartAnalysis 
+                revenues={filteredRevenues} 
+                settings={settings}
+                title="توزيع ونسب المبيعات حسب نوع المنتج (Pie Chart)"
+                subtitle="تحليل مرئي لحصص إيرادات المنتجات ضمن الفترة المحددة"
+              />
+              <ExpensePieChartAnalysis 
+                expenses={filteredExpenses} 
+                settings={settings}
+                title="توزيع ونسب استهلاك المصاريف حسب الفئات (Pie Chart)"
+                subtitle="تحليل مرئي لحصص التكلفة الممتصة ضمن الفترة المحددة"
+              />
+            </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-6 border-t border-hayat-border/40">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-6 border-t border-indigo-100/60">
                <div>
                   <h5 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-6">تحليل هامش الربح الشهري</h5>
                   <div className="h-[200px]">
@@ -1958,9 +2602,9 @@ function ReportsView({ expenses, revenues, budgets, waste = [], setActiveTab, se
                        <LineChart data={monthlyData}>
                           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                           <XAxis dataKey="formattedMonth" hide />
-                          <YAxis fontSize={10} fontWeight={700} tick={{ fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                          <YAxis fontSize={10} fontWeight={700} tick={{ fill: '#64748b' }} axisLine={false} tickLine={false} />
                           <Tooltip contentStyle={{ borderRadius: '12px', fontSize: '10px' }} />
-                          <Line type="monotone" name="هامش الربح %" dataKey="margin" stroke="#A16207" strokeWidth={3} dot={{ r: 4, fill: '#A16207' }} />
+                          <Line type="monotone" name="هامش الربح %" dataKey="margin" stroke="#059669" strokeWidth={3} dot={{ r: 4, fill: '#059669' }} />
                        </LineChart>
                     </ResponsiveContainer>
                   </div>
@@ -2050,6 +2694,7 @@ function ReportsView({ expenses, revenues, budgets, waste = [], setActiveTab, se
 
 function DataListSection({ title, type, items, user, services, settings }: { title: string, type: 'budget'|'expense'|'revenue'|'waste', items: any[], user: User, services: any, settings: any }) {
   const [showAdd, setShowAdd] = useState(false);
+  const [showPieChart, setShowPieChart] = useState(false);
   const [search, setSearch] = useState('');
   const [paymentFilter, setPaymentFilter] = useState('all');
   const [dateFrom, setDateFrom] = useState('');
@@ -2122,13 +2767,78 @@ function DataListSection({ title, type, items, user, services, settings }: { tit
             <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em]">{type === 'expense' ? 'Expenses Ledger' : type === 'revenue' ? 'Sales Ledger' : 'Ledger System'}</p>
           </div>
         </div>
-        <button 
-          onClick={() => setShowAdd(!showAdd)} 
-          className={showAdd ? 'btn-secondary' : 'btn-primary'}
-        >
-          {showAdd ? 'إلغاء العملية' : 'سجل جديد +'}
-        </button>
+        <div className="flex flex-wrap items-center gap-3">
+          {type === 'revenue' && (
+            <button 
+              onClick={() => setShowPieChart(!showPieChart)} 
+              className={`px-4 sm:px-5 py-3 rounded-2xl font-black text-[11px] uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer ${
+                showPieChart 
+                  ? 'bg-emerald-800 text-white shadow-md' 
+                  : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200/60'
+              }`}
+            >
+              <PieChartIcon size={16} className={showPieChart ? 'text-emerald-200' : 'text-emerald-700'} />
+              <span>{showPieChart ? 'إخفاء المخطط الدائري' : 'تحليل المبيعات (Pie Chart)'}</span>
+            </button>
+          )}
+          {type === 'expense' && (
+            <button 
+              onClick={() => setShowPieChart(!showPieChart)} 
+              className={`px-4 sm:px-5 py-3 rounded-2xl font-black text-[11px] uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer ${
+                showPieChart 
+                  ? 'bg-purple-900 text-white shadow-md' 
+                  : 'bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200/60'
+              }`}
+            >
+              <PieChartIcon size={16} className={showPieChart ? 'text-emerald-300' : 'text-purple-700'} />
+              <span>{showPieChart ? 'إخفاء المخطط الدائري' : 'تحليل المصاريف (Pie Chart)'}</span>
+            </button>
+          )}
+          <button 
+            onClick={() => setShowAdd(!showAdd)} 
+            className={showAdd ? 'btn-secondary' : 'btn-primary'}
+          >
+            {showAdd ? 'إلغاء العملية' : 'سجل جديد +'}
+          </button>
+        </div>
       </div>
+
+      <AnimatePresence>
+        {showPieChart && type === 'revenue' && (
+          <motion.div 
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden border-b border-hayat-border/40 bg-emerald-50/20"
+          >
+            <div className="p-4 sm:p-6 md:p-10">
+              <RevenuePieChartAnalysis 
+                revenues={filteredItems} 
+                settings={settings}
+                title="المخطط الدائري لتوزيع المبيعات حسب نوع المنتج"
+                subtitle="تحليل مرئي تفاعلي مباشر للمبيعات المصفاة حالياً حسب البحث والفلاتر"
+              />
+            </div>
+          </motion.div>
+        )}
+        {showPieChart && type === 'expense' && (
+          <motion.div 
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden border-b border-hayat-border/40 bg-purple-50/20"
+          >
+            <div className="p-4 sm:p-6 md:p-10">
+              <ExpensePieChartAnalysis 
+                expenses={filteredItems} 
+                settings={settings}
+                title="المخطط الدائري لتوزيع المصاريف حسب الفئات"
+                subtitle="تحليل مرئي تفاعلي مباشر للمصاريف المصفاة حالياً حسب البحث والفلاتر"
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {showAdd && (
@@ -2139,7 +2849,7 @@ function DataListSection({ title, type, items, user, services, settings }: { tit
             className="overflow-hidden border-b border-hayat-border/40 bg-hayat-accent/30"
           >
             <div className="p-10">
-              <RecordForm type={type} user={user} services={services} settings={settings} onComplete={() => setShowAdd(false)} />
+              <RecordForm type={type} user={user} services={services} settings={settings} existingItems={items} onComplete={() => setShowAdd(false)} />
             </div>
           </motion.div>
         )}
@@ -2197,7 +2907,95 @@ function DataListSection({ title, type, items, user, services, settings }: { tit
         </div>
       )}
 
-      <div className="p-0 overflow-x-auto">
+      {/* Mobile Touch Cards View */}
+      <div className="block md:hidden p-4 space-y-3 bg-slate-50/50">
+        {filteredItems.sort((a, b) => {
+          const aTime = a.createdAt?.seconds || 0;
+          const bTime = b.createdAt?.seconds || 0;
+          return bTime - aTime;
+        }).map((item) => (
+          <div 
+            key={item.id} 
+            className="bg-white rounded-2xl p-4 border border-indigo-100/70 shadow-sm space-y-3"
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div className="space-y-1 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className={`text-[10px] font-black px-2.5 py-1 rounded-lg ${
+                    type === 'revenue' 
+                      ? 'bg-emerald-50 text-emerald-800 border border-emerald-200/50' 
+                      : type === 'expense'
+                      ? 'bg-purple-50 text-purple-900 border border-purple-200/50'
+                      : 'bg-amber-50 text-amber-800 border border-amber-200/50'
+                  }`}>
+                    {type === 'budget' || type === 'expense' ? translateCategory(item.category) : 
+                     type === 'revenue' ? translateProduct(item.productType) : item.material}
+                  </span>
+                  {item.paymentMethod && (
+                    <span className="bg-slate-100 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded-md">
+                      {translatePaymentMethod(item.paymentMethod)}
+                    </span>
+                  )}
+                </div>
+                {type === 'revenue' && item.orderNumber && (
+                  <p className="text-[10px] font-bold text-slate-500">رقم الطلب: #{item.orderNumber}</p>
+                )}
+                {(item.description || item.reason) && (
+                  <p className="text-xs font-semibold text-slate-700 leading-snug">{item.description || item.reason}</p>
+                )}
+              </div>
+
+              <div className="text-left font-serif flex flex-col items-end">
+                <div className={`px-2.5 py-1 rounded-xl text-base font-black tabular-nums ${
+                  type === 'revenue' ? 'bg-emerald-50 text-emerald-700' : 'bg-purple-50 text-purple-950'
+                }`}>
+                  {(item.amount || item.estimatedCost || 0).toLocaleString()}
+                  <span className="text-[9px] font-sans font-bold mr-1">ريال</span>
+                </div>
+                {settings.isTaxRegistered && item.taxAmount > 0 && (
+                  <span className="text-[9px] text-slate-400 font-bold mt-0.5">شامل {item.taxAmount} ضريبة</span>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-[11px] text-slate-400">
+              <span className="font-bold tabular-nums">
+                {type === 'budget' ? item.month : safeFormat(item.date, 'yyyy / MM / dd')}
+              </span>
+
+              <div className="flex items-center gap-2">
+                {type !== 'budget' && (
+                  <button 
+                    onClick={() => setSelectedReceipt(item)} 
+                    title="سند"
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-purple-50 text-purple-900 text-[10px] font-bold hover:bg-purple-100 transition-colors"
+                  >
+                    <Printer size={13} />
+                    <span>سند</span>
+                  </button>
+                )}
+                <button 
+                  onClick={() => handleDelete(item.id)} 
+                  title="حذف"
+                  className="p-1.5 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors"
+                >
+                  <Trash2 size={13} />
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+
+        {filteredItems.length === 0 && (
+          <div className="py-12 text-center bg-white rounded-2xl border border-dashed border-slate-200">
+            <LayoutDashboard size={28} className="text-slate-300 mx-auto mb-2" />
+            <p className="text-slate-400 text-xs font-bold">لا توجد بيانات مطابقة لخيارات التصفية</p>
+          </div>
+        )}
+      </div>
+
+      {/* Desktop Ledger Table */}
+      <div className="hidden md:block p-0 overflow-x-auto">
         <table className="w-full text-right border-collapse">
           <thead>
             <tr className="bg-hayat-accent border-b border-hayat-border/40 text-slate-400 text-[10px] uppercase tracking-[0.15em] font-black">
@@ -2329,14 +3127,16 @@ function DataListSection({ title, type, items, user, services, settings }: { tit
   );
 }
 
-function RecordForm({ type, user, services, settings, onComplete }: { type: any, user: User, services: any, settings: any, onComplete: () => void }) {
+function RecordForm({ type, user, services, settings, existingItems = [], onComplete }: { type: any, user: User, services: any, settings: any, existingItems?: any[], onComplete: () => void }) {
   const [formData, setFormData] = useState<any>({
     category: 'materials',
+    customCategory: '',
     amount: '',
     date: format(new Date(), 'yyyy-MM-dd'),
     month: format(new Date(), 'yyyy-MM'),
     description: '',
     productType: 'acrylic',
+    customProductType: '',
     orderNumber: '',
     material: '',
     reason: '',
@@ -2344,8 +3144,116 @@ function RecordForm({ type, user, services, settings, onComplete }: { type: any,
     paymentMethod: 'cash'
   });
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [duplicateWarning, setDuplicateWarning] = useState<any>(null);
+  const lastSubmitTimeRef = useRef<number>(0);
+
+  const effectiveCategory = formData.category === 'custom' 
+    ? (formData.customCategory?.trim() || 'أخرى') 
+    : formData.category;
+
+  const effectiveProductType = formData.productType === 'custom' 
+    ? (formData.customProductType?.trim() || 'أخرى') 
+    : formData.productType;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
+    if (type === 'expense' && formData.category === 'custom' && !formData.customCategory?.trim()) {
+      alert('يرجى كتابة اسم الفئة / التصنيف المخصص للمصروف');
+      return;
+    }
+
+    if (type === 'revenue' && formData.productType === 'custom' && !formData.customProductType?.trim()) {
+      alert('يرجى كتابة نوع أو طبيعة المنتج المخصصة');
+      return;
+    }
+
+    const now = Date.now();
+    // Anti-rapid click lock (within 2 seconds)
+    if (lastSubmitTimeRef.current && (now - lastSubmitTimeRef.current < 2000)) {
+      return;
+    }
+    lastSubmitTimeRef.current = now;
+
+    // 1. Validate duplicates before posting
+    let duplicateFound: any = null;
+
+    if (type === 'expense') {
+      const enteredDate = formData.date;
+      const enteredAmount = Number(formData.amount);
+      const enteredCat = effectiveCategory;
+      const enteredDesc = (formData.description || '').trim().toLowerCase();
+
+      duplicateFound = existingItems.find((item: any) => {
+        const itemDate = (item.date || '').split('T')[0];
+        const itemAmount = Number(item.amount);
+        const itemCat = item.category;
+        const itemDesc = (item.description || '').trim().toLowerCase();
+
+        const sameDate = itemDate === enteredDate;
+        const sameAmount = Math.abs(itemAmount - enteredAmount) < 0.01;
+        const sameCategory = itemCat === enteredCat;
+        const sameDesc = (enteredDesc && itemDesc) ? (itemDesc === enteredDesc) : true;
+
+        return sameDate && sameAmount && sameCategory && sameDesc;
+      });
+    } else if (type === 'revenue') {
+      const enteredDate = formData.date;
+      const enteredAmount = Number(formData.amount);
+      const enteredProduct = effectiveProductType;
+      const enteredOrder = (formData.orderNumber || '').trim().toLowerCase();
+      const enteredDesc = (formData.description || '').trim().toLowerCase();
+
+      duplicateFound = existingItems.find((item: any) => {
+        const itemDate = (item.date || '').split('T')[0];
+        const itemAmount = Number(item.amount);
+        const itemProduct = item.productType;
+        const itemOrder = (item.orderNumber || '').trim().toLowerCase();
+        const itemDesc = (item.description || '').trim().toLowerCase();
+
+        // If exact same order number is supplied and matches
+        if (enteredOrder && itemOrder && enteredOrder === itemOrder) {
+          return true;
+        }
+
+        const sameDate = itemDate === enteredDate;
+        const sameAmount = Math.abs(itemAmount - enteredAmount) < 0.01;
+        const sameProduct = itemProduct === enteredProduct;
+        const sameDesc = (enteredDesc && itemDesc) ? (itemDesc === enteredDesc) : true;
+
+        return sameDate && sameAmount && sameProduct && sameDesc;
+      });
+    } else if (type === 'budget') {
+      const enteredMonth = formData.month;
+      const enteredCat = effectiveCategory;
+      duplicateFound = existingItems.find((item: any) => item.month === enteredMonth && item.category === enteredCat);
+    } else if (type === 'waste') {
+      const enteredDate = formData.date;
+      const enteredMat = (formData.material || '').trim().toLowerCase();
+      const enteredCost = Number(formData.estimatedCost);
+
+      duplicateFound = existingItems.find((item: any) => {
+        const itemDate = (item.date || '').split('T')[0];
+        const itemMat = (item.material || '').trim().toLowerCase();
+        const itemCost = Number(item.estimatedCost);
+        return itemDate === enteredDate && itemMat === enteredMat && Math.abs(itemCost - enteredCost) < 0.01;
+      });
+    }
+
+    // IF DUPLICATE IS FOUND: ABORT AND WARN USER, DO NOT POST (لا ترحله)
+    if (duplicateFound) {
+      setDuplicateWarning({
+        type,
+        duplicateItem: duplicateFound,
+        newItem: { ...formData, category: effectiveCategory, productType: effectiveProductType }
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
     try {
       const collectionName = `${type}s`;
       const payload: any = {
@@ -2354,11 +3262,11 @@ function RecordForm({ type, user, services, settings, onComplete }: { type: any,
       };
 
       if (type === 'budget') {
-        payload.category = formData.category;
+        payload.category = effectiveCategory;
         payload.amount = Number(formData.amount);
         payload.month = formData.month;
       } else if (type === 'expense') {
-        payload.category = formData.category;
+        payload.category = effectiveCategory;
         payload.amount = Number(formData.amount);
         payload.date = new Date(formData.date).toISOString();
         payload.description = formData.description;
@@ -2369,7 +3277,7 @@ function RecordForm({ type, user, services, settings, onComplete }: { type: any,
         payload.taxAmount = Number(calculatedTax.toFixed(2));
       } else if (type === 'revenue') {
         payload.amount = Number(formData.amount);
-        payload.productType = formData.productType;
+        payload.productType = effectiveProductType;
         payload.orderNumber = formData.orderNumber;
         payload.description = formData.description;
         payload.date = new Date(formData.date).toISOString();
@@ -2396,118 +3304,340 @@ function RecordForm({ type, user, services, settings, onComplete }: { type: any,
         existing.push(newRecord);
         localStorage.setItem(`local_${collectionName}`, JSON.stringify(existing));
         window.dispatchEvent(new Event('localDataChanged'));
+        setIsSubmitting(false);
         onComplete();
         return;
       }
 
       await addDoc(collection(services.db, collectionName), payload);
+      setIsSubmitting(false);
       onComplete();
     } catch (err) {
       console.error(err);
+      setIsSubmitting(false);
       alert('خطأ في الحفظ، يرجى مراجعة الصلاحيات');
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 items-end">
-      {type === 'budget' && (
-        <>
-          <FormGroup label="فترة الميزانية" child={<input type="month" value={formData.month} onChange={e => setFormData({...formData, month: e.target.value})} className="form-input" required />} />
-          <FormGroup label="تصنيف البند" child={
-            <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className="form-input">
-              <option value="materials">خامات أولية</option>
-              <option value="marketing">حملات تسويقية</option>
-              <option value="maintenance">صيانة وتشغيل</option>
-              <option value="wages">أجور وتكليفات</option>
-              <option value="other">مصاريف عامة</option>
-            </select>
-          } />
-          <FormGroup label="الميزانية المقررة" child={
-            <div className="relative">
-              <input type="number" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} className="form-input pl-12" required />
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-300">SAR</span>
-            </div>
-          } />
-        </>
-      )}
-
-      {type === 'expense' && (
-        <>
-          <FormGroup label="تاريخ الصرف" child={<input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="form-input" required />} />
-          <FormGroup label="فئة المصروف" child={
-             <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className="form-input">
-              <option value="materials">خامات أولية</option>
-              <option value="marketing">حملات تسويقية</option>
-              <option value="maintenance">صيانة وتشغيل</option>
-              <option value="wages">أجور وتكليفات</option>
-              <option value="other">مصاريف عامة</option>
-            </select>
-          } />
-          <FormGroup label="القيمة الإجمالية" child={
-             <div className="relative">
+    <>
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 items-end">
+        {type === 'budget' && (
+          <>
+            <FormGroup label="فترة الميزانية" child={<input type="month" value={formData.month} onChange={e => setFormData({...formData, month: e.target.value})} className="form-input" required />} />
+            <FormGroup label="تصنيف البند" child={
+              <div className="space-y-2">
+                <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className="form-input">
+                  <option value="materials">خامات أولية</option>
+                  <option value="marketing">حملات تسويقية</option>
+                  <option value="maintenance">صيانة وتشغيل</option>
+                  <option value="wages">أجور وتكليفات</option>
+                  <option value="other">مصاريف عامة</option>
+                  <option value="custom">✏️ كتابة تصنيف مخصص...</option>
+                </select>
+                {formData.category === 'custom' && (
+                  <input 
+                    type="text" 
+                    placeholder="اكتب اسم البند المخصص..." 
+                    value={formData.customCategory} 
+                    onChange={e => setFormData({...formData, customCategory: e.target.value})} 
+                    className="form-input text-xs border-amber-400 focus:border-amber-500 bg-amber-50/40"
+                    required
+                    autoFocus
+                  />
+                )}
+              </div>
+            } />
+            <FormGroup label="الميزانية المقررة" child={
+              <div className="relative">
                 <input type="number" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} className="form-input pl-12" required />
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-300">SAR</span>
-             </div>
-          } />
-          <FormGroup label="طريقة الدفع" child={
-             <select value={formData.paymentMethod} onChange={e => setFormData({...formData, paymentMethod: e.target.value})} className="form-input">
-              <option value="cash">نقداً</option>
-              <option value="mada">مدى</option>
-              <option value="apple_pay">أبل باي</option>
-              <option value="visa_master">فيزا / ماستركارد</option>
-              <option value="bank_transfer">تحويل بنكي</option>
-             </select>
-          } />
-          <FormGroup label="وصف العملية" child={<input type="text" placeholder="مثلاً: شراء خشب أكريليك" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="form-input" />} />
-        </>
-      )}
+              </div>
+            } />
+          </>
+        )}
 
-      {type === 'revenue' && (
-        <>
-          <FormGroup label="تاريخ التحصيل" child={<input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="form-input" required />} />
-          <FormGroup label="طبيعة المنتج" child={
-             <select value={formData.productType} onChange={e => setFormData({...formData, productType: e.target.value})} className="form-input">
-              <option value="acrylic">منتجات أكريليك</option>
-              <option value="wood">منتجات خشبية</option>
-              <option value="svg">ملفات رقمية (SVG)</option>
-              <option value="other">منتجات أخرى</option>
-            </select>
-          } />
-          <FormGroup label="قيمة المبيعات" child={
-            <div className="relative">
-               <input type="number" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} className="form-input pl-12" required />
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-300">SAR</span>
+        {type === 'expense' && (
+          <>
+            <FormGroup label="تاريخ الصرف" child={<input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="form-input" required />} />
+            <FormGroup label="فئة المصروف" child={
+              <div className="space-y-2">
+                <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className="form-input">
+                  <option value="materials">خامات أولية</option>
+                  <option value="marketing">حملات تسويقية</option>
+                  <option value="maintenance">صيانة وتشغيل</option>
+                  <option value="wages">أجور وتكليفات</option>
+                  <option value="other">مصاريف عامة</option>
+                  <option value="custom">✏️ كتابة نوع/فئة مخصصة...</option>
+                </select>
+                {formData.category === 'custom' && (
+                  <input 
+                    type="text" 
+                    placeholder="اكتب اسم الفئة أو نوع المصروف..." 
+                    value={formData.customCategory} 
+                    onChange={e => setFormData({...formData, customCategory: e.target.value})} 
+                    className="form-input text-xs border-amber-400 focus:border-amber-500 bg-amber-50/40"
+                    required
+                    autoFocus
+                  />
+                )}
+              </div>
+            } />
+            <FormGroup label="القيمة الإجمالية" child={
+               <div className="relative">
+                  <input type="number" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} className="form-input pl-12" required />
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-300">SAR</span>
+               </div>
+            } />
+            <FormGroup label="طريقة الدفع" child={
+               <select value={formData.paymentMethod} onChange={e => setFormData({...formData, paymentMethod: e.target.value})} className="form-input">
+                <option value="cash">نقداً</option>
+                <option value="mada">مدى</option>
+                <option value="apple_pay">أبل باي</option>
+                <option value="visa_master">فيزا / ماستركارد</option>
+                <option value="bank_transfer">تحويل بنكي</option>
+               </select>
+            } />
+            <FormGroup label="وصف العملية" child={<input type="text" placeholder="مثلاً: شراء خشب أكريليك" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="form-input" />} />
+          </>
+        )}
+
+        {type === 'revenue' && (
+          <>
+            <FormGroup label="تاريخ التحصيل" child={<input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="form-input" required />} />
+            <FormGroup label="طبيعة المنتج" child={
+              <div className="space-y-2">
+                <select value={formData.productType} onChange={e => setFormData({...formData, productType: e.target.value})} className="form-input">
+                  <option value="acrylic">منتجات أكريليك</option>
+                  <option value="wood">منتجات خشبية</option>
+                  <option value="svg">ملفات رقمية (SVG)</option>
+                  <option value="other">منتجات أخرى</option>
+                  <option value="custom">✏️ كتابة نوع منتج مخصص...</option>
+                </select>
+                {formData.productType === 'custom' && (
+                  <input 
+                    type="text" 
+                    placeholder="اكتب نوع أو صنف المنتج هنا..." 
+                    value={formData.customProductType} 
+                    onChange={e => setFormData({...formData, customProductType: e.target.value})} 
+                    className="form-input text-xs border-amber-400 focus:border-amber-500 bg-amber-50/40"
+                    required
+                    autoFocus
+                  />
+                )}
+              </div>
+            } />
+            <FormGroup label="قيمة المبيعات" child={
+              <div className="relative">
+                 <input type="number" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} className="form-input pl-12" required />
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-300">SAR</span>
+              </div>
+            } />
+            <FormGroup label="طريقة الدفع" child={
+               <select value={formData.paymentMethod} onChange={e => setFormData({...formData, paymentMethod: e.target.value})} className="form-input">
+                <option value="cash">نقداً</option>
+                <option value="mada">مدى</option>
+                <option value="apple_pay">أبل باي</option>
+                <option value="visa_master">فيزا / ماستركارد</option>
+                <option value="bank_transfer">تحويل بنكي</option>
+               </select>
+            } />
+            <FormGroup label="رقم المرجعي / الطلب" child={<input type="text" placeholder="Exp: 50442" value={formData.orderNumber} onChange={e => setFormData({...formData, orderNumber: e.target.value})} className="form-input" />} />
+          </>
+        )}
+
+        {type === 'waste' && (
+          <>
+            <FormGroup label="تاريخ الرصد" child={<input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="form-input" required />} />
+            <FormGroup label="المادة التالفة" child={<input type="text" placeholder="نوع الخامة" value={formData.material} onChange={e => setFormData({...formData, material: e.target.value})} className="form-input" required />} />
+            <FormGroup label="التكلفة التقديرية" child={
+              <div className="relative">
+                <input type="number" value={formData.estimatedCost} onChange={e => setFormData({...formData, estimatedCost: e.target.value})} className="form-input pl-12" required />
+                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-300">SAR</span>
+              </div>
+            } />
+            <FormGroup label="سبب الهدر" child={<input type="text" placeholder="توضيح السبب" value={formData.reason} onChange={e => setFormData({...formData, reason: e.target.value})} className="form-input" />} />
+          </>
+        )}
+
+        <button 
+          type="submit" 
+          disabled={isSubmitting} 
+          className="btn-primary h-[52px] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        >
+          {isSubmitting ? (
+            <span>جارِ الحفظ...</span>
+          ) : (
+            <span>اعتماد البيانات</span>
+          )}
+        </button>
+      </form>
+
+      {/* Duplicate Warning Modal */}
+      <AnimatePresence>
+        {duplicateWarning && (
+          <DuplicateAlertModal 
+            warning={duplicateWarning} 
+            onClose={() => setDuplicateWarning(null)} 
+            onCancelRecord={() => {
+              setDuplicateWarning(null);
+              onComplete();
+            }} 
+          />
+        )}
+      </AnimatePresence>
+    </>
+  );
+}
+
+function DuplicateAlertModal({ 
+  warning, 
+  onClose, 
+  onCancelRecord 
+}: { 
+  warning: { type: string; duplicateItem: any; newItem: any }; 
+  onClose: () => void; 
+  onCancelRecord: () => void; 
+}) {
+  const { type, duplicateItem } = warning;
+
+  const typeName = type === 'expense' 
+    ? 'مصروف' 
+    : type === 'revenue' 
+    ? 'مبيع / إيراد' 
+    : type === 'budget' 
+    ? 'بند ميزانية' 
+    : 'عنصر هدر';
+
+  return (
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[150] flex items-center justify-center p-4">
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.92, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.92, y: 20 }}
+        transition={{ type: "spring", damping: 25, stiffness: 300 }}
+        className="bg-white rounded-[2.25rem] shadow-2xl border border-rose-100 max-w-lg w-full overflow-hidden text-right"
+        dir="rtl"
+      >
+        {/* Warning Banner Header */}
+        <div className="bg-rose-50/90 border-b border-rose-100 p-6 flex items-start gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-rose-600 text-white flex items-center justify-center flex-shrink-0 shadow-lg shadow-rose-600/20">
+            <ShieldAlert size={26} />
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <span className="bg-rose-100 text-rose-800 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                حماية القيود المالية
+              </span>
+              <span className="text-rose-600 font-bold text-xs">⚠️ تم إيقاف الترحيل</span>
             </div>
-          } />
-          <FormGroup label="طريقة الدفع" child={
-             <select value={formData.paymentMethod} onChange={e => setFormData({...formData, paymentMethod: e.target.value})} className="form-input">
-              <option value="cash">نقداً</option>
-              <option value="mada">مدى</option>
-              <option value="apple_pay">أبل باي</option>
-              <option value="visa_master">فيزا / ماستركارد</option>
-              <option value="bank_transfer">تحويل بنكي</option>
-             </select>
-          } />
-          <FormGroup label="رقم المرجعي / الطلب" child={<input type="text" placeholder="Exp: 50442" value={formData.orderNumber} onChange={e => setFormData({...formData, orderNumber: e.target.value})} className="form-input" />} />
-        </>
-      )}
+            <h3 className="text-lg font-bold text-slate-900 mt-1 font-serif">
+              تم رصد {typeName} مكرر بنفس التفاصيل!
+            </h3>
+            <p className="text-xs text-rose-700 font-medium mt-1 leading-relaxed">
+              لم يتم ترحيل أو حفظ هذا السجل لتفادي ازدواجية وتكرار المعاملات المالية بالخطأ.
+            </p>
+          </div>
+        </div>
 
-      {type === 'waste' && (
-        <>
-          <FormGroup label="تاريخ الرصد" child={<input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="form-input" required />} />
-          <FormGroup label="المادة التالفة" child={<input type="text" placeholder="نوع الخامة" value={formData.material} onChange={e => setFormData({...formData, material: e.target.value})} className="form-input" required />} />
-          <FormGroup label="التكلفة التقديرية" child={
-            <div className="relative">
-              <input type="number" value={formData.estimatedCost} onChange={e => setFormData({...formData, estimatedCost: e.target.value})} className="form-input pl-12" required />
-               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-300">SAR</span>
+        {/* Comparison Details */}
+        <div className="p-6 space-y-4">
+          <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 space-y-3">
+            <div className="flex items-center justify-between border-b border-slate-200/60 pb-2.5">
+              <span className="text-[11px] font-bold text-slate-400">تفاصيل المعاملة السابقة المسجلة بالنظام:</span>
+              <span className="text-[10px] font-black text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md">سجل مطابق مسجل مسبقاً</span>
             </div>
-          } />
-          <FormGroup label="سبب الهدر" child={<input type="text" placeholder="توضيح السبب" value={formData.reason} onChange={e => setFormData({...formData, reason: e.target.value})} className="form-input" />} />
-        </>
-      )}
 
-      <button type="submit" className="btn-primary h-[52px]">اعتماد البيانات</button>
-    </form>
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div>
+                <span className="text-slate-400 block text-[10px]">القيمة المالية:</span>
+                <span className="font-serif font-black text-slate-900 text-sm">
+                  {(duplicateItem.amount || duplicateItem.estimatedCost || 0).toLocaleString()} ريال
+                </span>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[10px]">تاريخ السجل:</span>
+                <span className="font-bold text-slate-700 font-sans">
+                  {type === 'budget' ? duplicateItem.month : safeFormat(duplicateItem.date, 'yyyy / MM / dd')}
+                </span>
+              </div>
+
+              {type === 'expense' && (
+                <>
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">فئة المصروف:</span>
+                    <span className="font-bold text-slate-800">{translateCategory(duplicateItem.category)}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">البيان / الوصف:</span>
+                    <span className="font-bold text-slate-800 truncate block">{duplicateItem.description || 'بدون بيان'}</span>
+                  </div>
+                </>
+              )}
+
+              {type === 'revenue' && (
+                <>
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">نوع المنتج:</span>
+                    <span className="font-bold text-slate-800">{translateProduct(duplicateItem.productType)}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">رقم الطلب / المرجع:</span>
+                    <span className="font-bold text-slate-800">{duplicateItem.orderNumber ? `#${duplicateItem.orderNumber}` : 'غير محدد'}</span>
+                  </div>
+                </>
+              )}
+
+              {type === 'waste' && (
+                <>
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">المادة التالفة:</span>
+                    <span className="font-bold text-slate-800">{duplicateItem.material}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">السبب:</span>
+                    <span className="font-bold text-slate-800 truncate block">{duplicateItem.reason || 'غير محدد'}</span>
+                  </div>
+                </>
+              )}
+
+              {type === 'budget' && (
+                <div>
+                  <span className="text-slate-400 block text-[10px]">بند الميزانية:</span>
+                  <span className="font-bold text-slate-800">{translateCategory(duplicateItem.category)}</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Practical Advice Banner */}
+          <div className="bg-amber-50/70 border border-amber-200/70 rounded-xl p-3.5 flex items-start gap-2.5 text-[11px] text-amber-900">
+            <AlertCircle size={17} className="text-amber-600 flex-shrink-0 mt-0.5" />
+            <p className="leading-relaxed">
+              <strong>تنبيه للمستخدم:</strong> إذا كانت هذه عملية حقيقية منفصلة حدثت بنفس اليوم بنفس القيمة، يرجى كتابة بيان توضيحي مميز أو إدخال رقم طلب/مرجع فريد لإتمام ترحيلها بنجاح.
+            </p>
+          </div>
+        </div>
+
+        {/* Modal Buttons */}
+        <div className="bg-slate-50 px-6 py-4 border-t border-slate-100 flex items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={onCancelRecord}
+            className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-xs font-bold transition-all"
+          >
+            إلغاء العملية تماماً
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="btn-primary py-2.5 px-6 text-xs font-bold"
+          >
+            تعديل بيانات القيد
+          </button>
+        </div>
+      </motion.div>
+    </div>
   );
 }
 

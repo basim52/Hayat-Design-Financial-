@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-export type Category = 'materials' | 'marketing' | 'maintenance' | 'wages' | 'other';
-export type ProductType = 'acrylic' | 'wood' | 'svg' | 'other';
+export type Category = 'materials' | 'marketing' | 'maintenance' | 'wages' | 'other' | string;
+export type ProductType = 'acrylic' | 'wood' | 'svg' | 'other' | string;
 
 export interface BudgetTarget {
   id: string;

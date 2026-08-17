@@ -369,6 +369,7 @@ export default function InvoicesView({ invoices, user, services, settings }: Inv
         {showAddEditModal && (
           <AddEditInvoiceModal 
             invoice={selectedInvoice}
+            invoices={invoices}
             user={user}
             services={services}
             settings={settings}
@@ -394,7 +395,7 @@ export default function InvoicesView({ invoices, user, services, settings }: Inv
 /* ==========================================
    Add / Edit Invoice Modal Logic & UI
    ========================================== */
-function AddEditInvoiceModal({ invoice, user, services, settings, onClose }: { invoice: Invoice | null, user: any, services: any, settings: any, onClose: () => void }) {
+function AddEditInvoiceModal({ invoice, invoices = [], user, services, settings, onClose }: { invoice: Invoice | null, invoices?: Invoice[], user: any, services: any, settings: any, onClose: () => void }) {
   const isEdit = !!invoice;
   
   // Create auto serial numbers
@@ -411,6 +412,7 @@ function AddEditInvoiceModal({ invoice, user, services, settings, onClose }: { i
   const [notes, setNotes] = useState(invoice?.notes || 'نشكركم لثقتكم بنا وبخدماتنا!');
   const [paymentMethod, setPaymentMethod] = useState<string>((invoice as any)?.paymentMethod || 'bank_transfer');
   const [primaryProductType, setPrimaryProductType] = useState<string>((invoice as any)?.primaryProductType || '');
+  const [customPrimaryProductType, setCustomPrimaryProductType] = useState<string>('');
   
   // Logo customization state
   const [logoPreset, setLogoPreset] = useState(invoice?.logoPreset || 'default');
@@ -568,7 +570,29 @@ function AddEditInvoiceModal({ invoice, user, services, settings, onClose }: { i
       return;
     }
 
-    const finalProductType = primaryProductType || detectedType;
+    const effectivePrimaryType = primaryProductType === 'custom'
+      ? (customPrimaryProductType.trim() || 'أخرى')
+      : (primaryProductType || detectedType);
+
+    const finalProductType = effectivePrimaryType;
+
+    // Check duplicate invoice when creating new invoice
+    if (!isEdit && invoices) {
+      const duplicateInvoice = invoices.find(inv => {
+        if (invoiceNumber && inv.invoiceNumber && inv.invoiceNumber.trim().toLowerCase() === invoiceNumber.trim().toLowerCase()) {
+          return true;
+        }
+        const sameCustomer = (inv.customerName || '').trim().toLowerCase() === customerName.trim().toLowerCase();
+        const sameDate = inv.date === date;
+        const sameTotal = Math.abs((inv.grandTotal || 0) - (calculatedGrandTotal || 0)) < 0.01;
+        return sameCustomer && sameDate && sameTotal;
+      });
+
+      if (duplicateInvoice) {
+        alert(`⚠️ تنبيه: تم رصد فاتورة مكررة مسجلة مسبقاً بنفس رقم الفاتورة أو نفس العميل والتاريخ والقيمة (${duplicateInvoice.invoiceNumber || duplicateInvoice.customerName})! لم يتم ترحيل أو حفظ الفاتورة لتفادي تكرار المبيعات.`);
+        return;
+      }
+    }
 
     const payload: any = {
       userId: user?.uid || '',
@@ -946,21 +970,35 @@ function AddEditInvoiceModal({ invoice, user, services, settings, onClose }: { i
 
               <div className="flex flex-col gap-2">
                 <label className="text-[10px] font-bold text-slate-500">تصنيف المنتج لـ المبيعات</label>
-                <select 
-                  value={primaryProductType}
-                  onChange={e => setPrimaryProductType(e.target.value)}
-                  className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 font-bold focus:border-emerald-500 outline-none"
-                >
-                  <option value="">كشف تلقائي الذكي: ({
-                    detectedType === 'acrylic' ? 'منتجات أكريليك' :
-                    detectedType === 'wood' ? 'منتجات خشبية' :
-                    detectedType === 'svg' ? 'ملفات رقمية (SVG)' : 'منتج آخر'
-                  })</option>
-                  <option value="acrylic">منتجات أكريليك</option>
-                  <option value="wood">منتجات خشبية</option>
-                  <option value="svg">ملفات رقمية (SVG)</option>
-                  <option value="other">منتج آخر</option>
-                </select>
+                <div className="space-y-2">
+                  <select 
+                    value={primaryProductType}
+                    onChange={e => setPrimaryProductType(e.target.value)}
+                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 font-bold focus:border-emerald-500 outline-none"
+                  >
+                    <option value="">كشف تلقائي الذكي: ({
+                      detectedType === 'acrylic' ? 'منتجات أكريليك' :
+                      detectedType === 'wood' ? 'منتجات خشبية' :
+                      detectedType === 'svg' ? 'ملفات رقمية (SVG)' : 'منتج آخر'
+                    })</option>
+                    <option value="acrylic">منتجات أكريليك</option>
+                    <option value="wood">منتجات خشبية</option>
+                    <option value="svg">ملفات رقمية (SVG)</option>
+                    <option value="other">منتج آخر</option>
+                    <option value="custom">✏️ كتابة نوع منتج مخصص...</option>
+                  </select>
+                  {primaryProductType === 'custom' && (
+                    <input 
+                      type="text" 
+                      placeholder="اكتب نوع أو تصنيف المنتج المخصص..." 
+                      value={customPrimaryProductType} 
+                      onChange={e => setCustomPrimaryProductType(e.target.value)} 
+                      className="w-full bg-amber-50/40 border border-amber-400 focus:border-amber-500 rounded-xl px-3 py-2 text-xs text-slate-800 outline-none font-bold"
+                      required
+                      autoFocus
+                    />
+                  )}
+                </div>
               </div>
             </div>
           </div>
