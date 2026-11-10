@@ -11,14 +11,12 @@ export async function initFirebase() {
   if (app) return { app, db, auth };
   
   try {
-    console.log("Initializing Firebase with config:", firebaseConfig.projectId);
     if (firebaseConfig && firebaseConfig.apiKey) {
       app = initializeApp(firebaseConfig);
       db = initializeFirestore(app, {
         experimentalForceLongPolling: true
       }, firebaseConfig.firestoreDatabaseId);
       auth = getAuth(app);
-      console.log("Firebase initialized successfully with long polling");
     } else {
       console.warn("Firebase config is missing apiKey");
     }

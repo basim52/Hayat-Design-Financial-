@@ -1,55 +1,65 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // 1. Master Gate / Default Deny
+    // 1. Default Deny - Master Gate
     match /{document=**} {
       allow read, write: if false;
     }
 
-    // 2. Global Helpers
-    function isSignedIn() {
-      return request.auth != null;
-    }
-    function isValidId(id) {
-      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
-    }
-    function incoming() {
-      return request.resource.data;
-    }
-    function existing() {
-      return resource.data;
+    // 2. Authentication & Email Whitelist Helper
+    function isAllowedUser() {
+      return request.auth != null &&
+        request.auth.token.email != null &&
+        (request.auth.token.email == 'basim5252@gmail.com' ||
+         request.auth.token.email == 'Hayatalzaki@gmail.com' ||
+         request.auth.token.email == 'hayatalzaki@gmail.com' ||
+         request.auth.token.email.matches('(?i)^(basim5252@gmail\\.com|hayatalzaki@gmail\\.com)$'));
     }
 
+    // 3. User Document & Settings Subcollection (for PIN hash and store settings)
+    match /users/{userId} {
+      allow read, write: if isAllowedUser() && request.auth.uid == userId;
 
-    // 3. Collection Rules
+      match /settings/{settingId} {
+        allow read, write: if isAllowedUser() && request.auth.uid == userId;
+      }
+    }
+
+    // 4. Financial Collections - Strictly isolated per user
     match /budgets/{budgetId} {
-      allow read: if isSignedIn();
-      allow create, update: if isSignedIn(); // Allow shared edits
-      allow delete: if isSignedIn();
+      allow read, delete: if isAllowedUser() && resource.data.userId == request.auth.uid;
+      allow create: if isAllowedUser() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAllowedUser() && resource.data.userId == request.auth.uid && request.resource.data.userId == request.auth.uid;
     }
 
     match /expenses/{expenseId} {
-      allow read: if isSignedIn();
-      allow create, update: if isSignedIn();
-      allow delete: if isSignedIn();
+      allow read, delete: if isAllowedUser() && resource.data.userId == request.auth.uid;
+      allow create: if isAllowedUser() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAllowedUser() && resource.data.userId == request.auth.uid && request.resource.data.userId == request.auth.uid;
     }
 
     match /revenues/{revenueId} {
-      allow read: if isSignedIn();
-      allow create, update: if isSignedIn();
-      allow delete: if isSignedIn();
+      allow read, delete: if isAllowedUser() && resource.data.userId == request.auth.uid;
+      allow create: if isAllowedUser() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAllowedUser() && resource.data.userId == request.auth.uid && request.resource.data.userId == request.auth.uid;
     }
 
     match /wastes/{wasteId} {
-      allow read: if isSignedIn();
-      allow create, update: if isSignedIn();
-      allow delete: if isSignedIn();
+      allow read, delete: if isAllowedUser() && resource.data.userId == request.auth.uid;
+      allow create: if isAllowedUser() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAllowedUser() && resource.data.userId == request.auth.uid && request.resource.data.userId == request.auth.uid;
+    }
+
+    match /waste/{wasteId} {
+      allow read, delete: if isAllowedUser() && resource.data.userId == request.auth.uid;
+      allow create: if isAllowedUser() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAllowedUser() && resource.data.userId == request.auth.uid && request.resource.data.userId == request.auth.uid;
     }
 
     match /invoices/{invoiceId} {
-      allow read: if isSignedIn();
-      allow create, update: if isSignedIn();
-      allow delete: if isSignedIn();
+      allow read, delete: if isAllowedUser() && resource.data.userId == request.auth.uid;
+      allow create: if isAllowedUser() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAllowedUser() && resource.data.userId == request.auth.uid && request.resource.data.userId == request.auth.uid;
     }
   }
 }
