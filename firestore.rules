@@ -1,65 +1,23 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // 1. Default Deny - Master Gate
-    match /{document=**} {
-      allow read, write: if false;
-    }
-
-    // 2. Authentication & Email Whitelist Helper
+    match /{document=**} { allow read, write: if false; }
     function isAllowedUser() {
-      return request.auth != null &&
-        request.auth.token.email != null &&
-        (request.auth.token.email == 'basim5252@gmail.com' ||
-         request.auth.token.email == 'Hayatalzaki@gmail.com' ||
-         request.auth.token.email == 'hayatalzaki@gmail.com' ||
-         request.auth.token.email.matches('(?i)^(basim5252@gmail\\.com|hayatalzaki@gmail\\.com)$'));
+      return request.auth != null && request.auth.token.email != null &&
+        request.auth.token.email.lower() in ['basim5252@gmail.com', 'hayatalzaki@gmail.com'];
     }
-
-    // 3. User Document & Settings Subcollection (for PIN hash and store settings)
     match /users/{userId} {
       allow read, write: if isAllowedUser() && request.auth.uid == userId;
-
-      match /settings/{settingId} {
-        allow read, write: if isAllowedUser() && request.auth.uid == userId;
-      }
+      match /settings/{settingId} { allow read, write: if isAllowedUser() && request.auth.uid == userId; }
     }
-
-    // 4. Financial Collections - Strictly isolated per user
-    match /budgets/{budgetId} {
-      allow read, delete: if isAllowedUser() && resource.data.userId == request.auth.uid;
-      allow create: if isAllowedUser() && request.resource.data.userId == request.auth.uid;
-      allow update: if isAllowedUser() && resource.data.userId == request.auth.uid && request.resource.data.userId == request.auth.uid;
-    }
-
-    match /expenses/{expenseId} {
-      allow read, delete: if isAllowedUser() && resource.data.userId == request.auth.uid;
-      allow create: if isAllowedUser() && request.resource.data.userId == request.auth.uid;
-      allow update: if isAllowedUser() && resource.data.userId == request.auth.uid && request.resource.data.userId == request.auth.uid;
-    }
-
-    match /revenues/{revenueId} {
-      allow read, delete: if isAllowedUser() && resource.data.userId == request.auth.uid;
-      allow create: if isAllowedUser() && request.resource.data.userId == request.auth.uid;
-      allow update: if isAllowedUser() && resource.data.userId == request.auth.uid && request.resource.data.userId == request.auth.uid;
-    }
-
-    match /wastes/{wasteId} {
-      allow read, delete: if isAllowedUser() && resource.data.userId == request.auth.uid;
-      allow create: if isAllowedUser() && request.resource.data.userId == request.auth.uid;
-      allow update: if isAllowedUser() && resource.data.userId == request.auth.uid && request.resource.data.userId == request.auth.uid;
-    }
-
-    match /waste/{wasteId} {
-      allow read, delete: if isAllowedUser() && resource.data.userId == request.auth.uid;
-      allow create: if isAllowedUser() && request.resource.data.userId == request.auth.uid;
-      allow update: if isAllowedUser() && resource.data.userId == request.auth.uid && request.resource.data.userId == request.auth.uid;
-    }
-
-    match /invoices/{invoiceId} {
-      allow read, delete: if isAllowedUser() && resource.data.userId == request.auth.uid;
-      allow create: if isAllowedUser() && request.resource.data.userId == request.auth.uid;
-      allow update: if isAllowedUser() && resource.data.userId == request.auth.uid && request.resource.data.userId == request.auth.uid;
-    }
+    function sharedLedger() { return isAllowedUser(); }
+    function validCreate() { return request.resource.data.userId == request.auth.uid; }
+    function keepsCreator() { return request.resource.data.userId == resource.data.userId; }
+    match /budgets/{id}  { allow read, delete: if sharedLedger(); allow create: if sharedLedger() && validCreate(); allow update: if sharedLedger() && keepsCreator(); }
+    match /expenses/{id} { allow read, delete: if sharedLedger(); allow create: if sharedLedger() && validCreate(); allow update: if sharedLedger() && keepsCreator(); }
+    match /revenues/{id} { allow read, delete: if sharedLedger(); allow create: if sharedLedger() && validCreate(); allow update: if sharedLedger() && keepsCreator(); }
+    match /wastes/{id}   { allow read, delete: if sharedLedger(); allow create: if sharedLedger() && validCreate(); allow update: if sharedLedger() && keepsCreator(); }
+    match /waste/{id}    { allow read, delete: if sharedLedger(); allow create: if sharedLedger() && validCreate(); allow update: if sharedLedger() && keepsCreator(); }
+    match /invoices/{id} { allow read, delete: if sharedLedger(); allow create: if sharedLedger() && validCreate(); allow update: if sharedLedger() && keepsCreator(); }
   }
 }

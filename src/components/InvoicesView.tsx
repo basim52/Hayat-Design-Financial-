@@ -39,6 +39,7 @@ import { Invoice, InvoiceItem } from '../types';
 import { generateInvoiceQRCodeDataURL } from '../utils/zatcaTlv';
 import { cleanOklColorsAndPatchGetComputedStyle } from '../utils/canvasExport';
 import { DialogModal, DialogState } from './ConfirmModal';
+import { getAuthorDisplayName } from '../config';
 
 interface InvoicesViewProps {
   invoices: Invoice[];
@@ -108,7 +109,6 @@ export default function InvoicesView({ invoices, user, services, settings }: Inv
           } else {
             const q = query(
               collection(services.db, 'revenues'), 
-              where('userId', '==', user.uid),
               where('invoiceId', '==', id)
             );
             const qSnap = await getDocs(q);
@@ -198,7 +198,8 @@ export default function InvoicesView({ invoices, user, services, settings }: Inv
               <th className="py-5 px-6 sm:px-10">العميل</th>
               <th className="py-5 px-6 sm:px-10">التاريخ</th>
               <th className="py-5 px-6 sm:px-10 text-left">المبلغ الإجمالي</th>
-              <th className="py-5 px-6 sm:px-10 w-44">العمليات</th>
+              <th className="py-5 px-6 sm:px-10">أضافه</th>
+              <th className="py-5 px-6 sm:px-10 w-44 text-left">العمليات</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-hayat-border/30 text-sm">
@@ -226,6 +227,15 @@ export default function InvoicesView({ invoices, user, services, settings }: Inv
                     {(inv.grandTotal || 0).toLocaleString()}
                     <span className="text-xs font-sans font-bold">ريال</span>
                   </div>
+                </td>
+                <td className="py-5 px-6 sm:px-10 whitespace-nowrap">
+                  <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${
+                    getAuthorDisplayName(inv, user?.email) === 'أبو عبود'
+                      ? 'bg-purple-100 text-purple-900 border border-purple-200'
+                      : 'bg-emerald-100 text-emerald-900 border border-emerald-200'
+                  }`}>
+                    {getAuthorDisplayName(inv, user?.email)}
+                  </span>
                 </td>
                 <td className="py-5 px-6 sm:px-10 text-left">
                   <div className="flex items-center justify-end gap-2">
@@ -256,7 +266,7 @@ export default function InvoicesView({ invoices, user, services, settings }: Inv
             ))}
             {filteredInvoices.length === 0 && (
               <tr>
-                <td colSpan={5} className="py-16 text-center">
+                <td colSpan={6} className="py-16 text-center">
                   <div className="flex flex-col items-center">
                     <div className="w-16 h-16 bg-hayat-accent rounded-full flex items-center justify-center text-slate-400 mb-4">
                       <FileText size={32} />
@@ -550,7 +560,8 @@ function AddEditInvoiceModal({
     setIsSubmitting(true);
 
     const payload: any = {
-      userId: user?.uid || '',
+      userId: isEdit && invoice?.userId ? invoice.userId : (user?.uid || ''),
+      createdByEmail: isEdit && invoice?.createdByEmail ? invoice.createdByEmail : (user?.email || ''),
       invoiceNumber: invoiceNumber || '',
       customerName: customerName || '',
       customerPhone: customerPhone || '',
@@ -648,11 +659,14 @@ function AddEditInvoiceModal({
       if (isEdit && invoice) {
         const revId = invoice.revenueId;
         payload.revenueId = revId || null;
+        const originalUserId = invoice.userId || user.uid;
+        const originalCreatedByEmail = invoice.createdByEmail || user.email || '';
         
         await updateDoc(doc(services.db, 'invoices', invoice.id), payload);
         
         const revPayload: any = {
-          userId: user.uid,
+          userId: originalUserId,
+          createdByEmail: originalCreatedByEmail,
           amount: payload.grandTotal,
           productType: primaryProductType,
           orderNumber: payload.invoiceNumber,
@@ -676,7 +690,6 @@ function AddEditInvoiceModal({
         } else {
           const q = query(
             collection(services.db, 'revenues'), 
-            where('userId', '==', user.uid),
             where('invoiceId', '==', invoice.id)
           );
           const qSnap = await getDocs(q);
@@ -702,12 +715,15 @@ function AddEditInvoiceModal({
         
         payload.id = newInvoiceId;
         payload.revenueId = newRevenueId;
+        payload.userId = user.uid;
+        payload.createdByEmail = user.email || '';
         payload.createdAt = serverTimestamp();
         
         await setDoc(newInvoiceRef, payload);
         
         const revPayload = {
           userId: user.uid,
+          createdByEmail: user.email || '',
           amount: payload.grandTotal,
           productType: primaryProductType,
           orderNumber: payload.invoiceNumber,

@@ -12,3 +12,21 @@ export function isEmailAllowed(email?: string | null): boolean {
   const normalized = email.trim().toLowerCase();
   return ALLOWED_EMAILS.some(allowed => allowed.trim().toLowerCase() === normalized);
 }
+
+export function getAuthorDisplayName(item?: { createdByEmail?: string; userId?: string } | null, currentAuthEmail?: string | null): string {
+  if (!item) return '---';
+  const email = (item.createdByEmail || '').trim().toLowerCase();
+  if (email.includes('basim5252')) {
+    return 'أبو عبود';
+  }
+  if (email.includes('hayatalzaki')) {
+    return 'أم عبود';
+  }
+  // Fallback if createdByEmail is not recorded yet on older records
+  if (currentAuthEmail) {
+    const curEmail = currentAuthEmail.trim().toLowerCase();
+    if (curEmail.includes('hayatalzaki')) return 'أم عبود';
+  }
+  return 'أبو عبود';
+}
+

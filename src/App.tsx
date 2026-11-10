@@ -74,7 +74,7 @@ import {
   ProductType, 
   Invoice 
 } from './types';
-import { ALLOWED_EMAILS, isEmailAllowed } from './config';
+import { ALLOWED_EMAILS, isEmailAllowed, getAuthorDisplayName } from './config';
 import { cleanOklColorsAndPatchGetComputedStyle } from './utils/canvasExport';
 import { DialogModal, DialogState } from './components/ConfirmModal';
 import PinLockModal from './components/PinLockModal';
@@ -368,12 +368,13 @@ export default function App() {
     setup();
   }, []);
 
-  // Data Fetching: All listeners strictly use where("userId", "==", user.uid)
+  // Data Fetching: Shared ledger for allowed users once logged in, verified, and unlocked via PIN
   useEffect(() => {
     if (!user || (user as any).isLocalGuest || !services.db) return;
+    if (!isEmailAllowed(user.email) || !isPinUnlocked) return;
 
     const unsubBudgets = onSnapshot(
-      query(collection(services.db, 'budgets'), where('userId', '==', user.uid)),
+      collection(services.db, 'budgets'),
       (snap) => {
         setBudgets(snap.docs.map(d => ({ id: d.id, ...d.data() } as BudgetTarget)));
       },
@@ -381,7 +382,7 @@ export default function App() {
     );
 
     const unsubExpenses = onSnapshot(
-      query(collection(services.db, 'expenses'), where('userId', '==', user.uid)),
+      collection(services.db, 'expenses'),
       (snap) => {
         setExpenses(snap.docs.map(d => ({ id: d.id, ...d.data() } as Expense)));
       },
@@ -389,7 +390,7 @@ export default function App() {
     );
 
     const unsubRevenues = onSnapshot(
-      query(collection(services.db, 'revenues'), where('userId', '==', user.uid)),
+      collection(services.db, 'revenues'),
       (snap) => {
         setRevenues(snap.docs.map(d => ({ id: d.id, ...d.data() } as Revenue)));
       },
@@ -397,7 +398,7 @@ export default function App() {
     );
 
     const unsubWaste = onSnapshot(
-      query(collection(services.db, 'wastes'), where('userId', '==', user.uid)),
+      collection(services.db, 'wastes'),
       (snap) => {
         setWaste(snap.docs.map(d => ({ id: d.id, ...d.data() } as WasteItem)));
       },
@@ -405,7 +406,7 @@ export default function App() {
     );
 
     const unsubInvoices = onSnapshot(
-      query(collection(services.db, 'invoices'), where('userId', '==', user.uid)),
+      collection(services.db, 'invoices'),
       (snap) => {
         const parsedInvoices = snap.docs.map(d => ({ id: d.id, ...d.data() } as Invoice));
         setInvoices(parsedInvoices);
@@ -420,7 +421,7 @@ export default function App() {
       unsubWaste();
       unsubInvoices();
     };
-  }, [user, services.db]);
+  }, [user, isPinUnlocked, services.db]);
 
   const handleSeedData = () => {
     if (!user) return;
@@ -483,9 +484,9 @@ export default function App() {
             return;
           }
 
-          for (const r of sampleRevenues) await addDoc(collection(services.db, 'revenues'), { ...r, userId: user.uid, createdAt: serverTimestamp() });
-          for (const e of sampleExpenses) await addDoc(collection(services.db, 'expenses'), { ...e, userId: user.uid, createdAt: serverTimestamp() });
-          for (const b of sampleBudgets) await addDoc(collection(services.db, 'budgets'), { ...b, userId: user.uid, createdAt: serverTimestamp() });
+          for (const r of sampleRevenues) await addDoc(collection(services.db, 'revenues'), { ...r, userId: user.uid, createdByEmail: user.email || '', createdAt: serverTimestamp() });
+          for (const e of sampleExpenses) await addDoc(collection(services.db, 'expenses'), { ...e, userId: user.uid, createdByEmail: user.email || '', createdAt: serverTimestamp() });
+          for (const b of sampleBudgets) await addDoc(collection(services.db, 'budgets'), { ...b, userId: user.uid, createdByEmail: user.email || '', createdAt: serverTimestamp() });
 
           setDialog({
             isOpen: true,
@@ -1396,6 +1397,7 @@ function DataListSection({
                 <th className="py-5 px-6 sm:px-10">{type === 'budget' ? 'بند الميزانية' : (type === 'revenue' ? 'المنتج / الطلب' : 'البيان')}</th>
                 <th className="py-5 px-6 sm:px-10 text-left">القيمة المالية</th>
                 {type !== 'budget' && <th className="py-5 px-6 sm:px-10">طريقة الدفع والتفاصيل</th>}
+                <th className="py-5 px-6 sm:px-10">أضافه</th>
                 <th className="py-5 px-6 sm:px-10 w-36 text-left">العمليات</th>
               </tr>
             </thead>
@@ -1443,6 +1445,15 @@ function DataListSection({
                       </div>
                     </td>
                   )}
+                  <td className="py-5 px-6 sm:px-10 whitespace-nowrap">
+                    <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${
+                      getAuthorDisplayName(item, user?.email) === 'أبو عبود'
+                        ? 'bg-purple-100 text-purple-900 border border-purple-200'
+                        : 'bg-emerald-100 text-emerald-900 border border-emerald-200'
+                    }`}>
+                      {getAuthorDisplayName(item, user?.email)}
+                    </span>
+                  </td>
                   <td className="py-5 px-6 sm:px-10 text-left">
                     <div className="flex items-center justify-end gap-1.5">
                       {type !== 'budget' && (
@@ -1467,7 +1478,7 @@ function DataListSection({
               ))}
               {filteredItems.length === 0 && (
                 <tr>
-                  <td colSpan={type === 'budget' ? 4 : 5} className="py-16 text-center">
+                  <td colSpan={type === 'budget' ? 5 : 6} className="py-16 text-center">
                     <div className="flex flex-col items-center">
                       <div className="w-16 h-16 bg-hayat-accent rounded-full flex items-center justify-center text-slate-400 mb-3">
                         <LayoutDashboard size={32} />
@@ -1588,6 +1599,7 @@ function DataForm({ type, onComplete, user, services, settings, existingItems, s
       const collectionName = `${type}s`;
       const payload: any = {
         userId: user.uid,
+        createdByEmail: user.email || '',
         createdAt: serverTimestamp(),
       };
 

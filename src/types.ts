@@ -9,6 +9,7 @@ export type ProductType = 'acrylic' | 'wood' | 'svg' | 'other' | string;
 export interface BudgetTarget {
   id: string;
   userId: string;
+  createdByEmail?: string;
   category: Category;
   amount: number;
   month: string; // YYYY-MM
@@ -18,6 +19,7 @@ export interface BudgetTarget {
 export interface Expense {
   id: string;
   userId: string;
+  createdByEmail?: string;
   category: Category;
   amount: number;
   date: string; // ISO string
@@ -30,6 +32,7 @@ export interface Expense {
 export interface Revenue {
   id: string;
   userId: string;
+  createdByEmail?: string;
   amount: number;
   productType: ProductType;
   orderNumber: string;
@@ -44,6 +47,7 @@ export interface Revenue {
 export interface WasteItem {
   id: string;
   userId: string;
+  createdByEmail?: string;
   material: string;
   estimatedCost: number;
   reason: string;
@@ -62,6 +66,7 @@ export interface InvoiceItem {
 export interface Invoice {
   id: string;
   userId: string;
+  createdByEmail?: string;
   invoiceNumber: string;
   customerName: string;
   customerPhone?: string;
